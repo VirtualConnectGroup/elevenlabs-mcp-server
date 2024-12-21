@@ -5,6 +5,7 @@ from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 from dotenv import load_dotenv
+import json
 
 from .elevenlabs_api import ElevenLabsAPI
 
@@ -20,6 +21,49 @@ class ElevenLabsServer:
         # Set up handlers
         self.setup_tools()
     
+    def parse_script(self, script_json: str) -> tuple[list[dict], list[str]]:
+        """
+        Parse the script JSON string into a list of script parts and collect debug information.
+        
+        Args:
+            script_json: JSON string containing the script array
+            
+        Returns:
+            tuple containing:
+                - list of parsed script parts
+                - list of debug information strings
+                
+        Raises:
+            Exception: If JSON is invalid or script format is incorrect
+        """
+        debug_info = []
+        debug_info.append(f"Raw script JSON: {script_json}")
+        
+        try:
+            # Parse the JSON string to get the actual script array
+            script_data = json.loads(script_json)
+            script_array = script_data.get('script', [])
+            debug_info.append(f"Parsed script array: {script_array}")
+        except json.JSONDecodeError as e:
+            debug_info.append(f"JSON parse error: {str(e)}")
+            raise Exception(f"Invalid JSON format: {str(e)}")
+        
+        script_parts = []
+        for part in script_array:
+            debug_info.append(f"Processing part: {part}")
+            debug_info.append(f"Part type: {type(part)}")
+            if isinstance(part, dict):
+                new_part = {
+                    "text": str(part.get("text", "")),
+                    "voice_id": part.get("voice_id"),
+                    "actor": part.get("actor")
+                }
+                debug_info.append(f"Created part: {new_part}")
+                script_parts.append(new_part)
+        
+        debug_info.append(f"Final script_parts: {script_parts}")
+        return script_parts, debug_info
+
     def setup_tools(self):
         @self.server.list_tools()
         async def handle_list_tools() -> list[types.Tool]:
@@ -44,35 +88,12 @@ class ElevenLabsServer:
         async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             if name == "generate_audio":
                 try:
-                    # Generate audio using the API - using the original API implementation
-                    # Parse and convert script parts to proper dictionary format
                     debug_info = []
                     debug_info.append(f"Raw arguments: {arguments}")
                     
-                    import json
-                    try:
-                        # Parse the JSON string to get the actual script array
-                        script_data = json.loads(arguments.get('script', '{}'))
-                        script_array = script_data.get('script', [])
-                        debug_info.append(f"Parsed script array: {script_array}")
-                    except json.JSONDecodeError as e:
-                        debug_info.append(f"JSON parse error: {str(e)}")
-                        raise Exception(f"Invalid JSON format: {str(e)}")
+                    script_parts, parse_debug_info = self.parse_script(arguments.get('script', '{}'))
+                    debug_info.extend(parse_debug_info)
                     
-                    script_parts = []
-                    for part in script_array:
-                        debug_info.append(f"Processing part: {part}")
-                        debug_info.append(f"Part type: {type(part)}")
-                        if isinstance(part, dict):
-                            new_part = {
-                                "text": str(part.get("text", "")),
-                                "voice_id": part.get("voice_id"),
-                                "actor": part.get("actor")
-                            }
-                            debug_info.append(f"Created part: {new_part}")
-                            script_parts.append(new_part)
-                    
-                    debug_info.append(f"Final script_parts: {script_parts}")
                     output_file = self.api.generate_full_audio(
                         script_parts,
                         self.output_dir

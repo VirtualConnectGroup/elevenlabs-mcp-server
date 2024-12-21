@@ -7,7 +7,8 @@ dependencies = [
     "mcp",
     "requests",
     "pydub",
-    "python-dotenv"
+    "python-dotenv",
+    "pytest>=8.3.4",
 ]
 
 [project.optional-dependencies]
