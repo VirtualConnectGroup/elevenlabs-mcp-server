@@ -123,7 +123,7 @@ class ElevenLabsServer:
             return resources
 
         @self.server.read_resource()
-        async def handle_read_resource(uri: str) -> list[types.Content]:
+        async def handle_read_resource(uri: str) -> list[types.TextContent | types.ImageContent]:
             # Extract job_id from uri
             if not uri.startswith("audio://"):
                 raise ValueError("Invalid resource URI")

@@ -72,6 +72,11 @@ class ElevenLabsAPI:
         all_texts = [part['text'] for part in script_parts]
         
         for i, part in enumerate(script_parts):
+            part_voice_id = part.get('voice_id')
+            if not part_voice_id:
+                part_voice_id = self.voice_id
+            print(f"Using voice ID: {part_voice_id}")
+            
             # Determine previous and next text for context
             is_first = i == 0
             is_last = i == len(script_parts) - 1
@@ -82,7 +87,7 @@ class ElevenLabsAPI:
             # Generate audio with context conditioning
             audio_content, request_id = self.generate_audio_segment(
                 text=part['text'],
-                voice_id=part['voice_id'] or self.voice_id,
+                voice_id=part_voice_id,
                 previous_text=previous_text,
                 next_text=next_text,
                 previous_request_ids=previous_request_ids
