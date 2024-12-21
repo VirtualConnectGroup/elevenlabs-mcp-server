@@ -53,8 +53,13 @@ class ElevenLabsServer:
             debug_info.append(f"Processing part: {part}")
             debug_info.append(f"Part type: {type(part)}")
             if isinstance(part, dict):
+                text = part.get("text", "").strip()
+                if not text:
+                    debug_info.append("Missing or empty text field")
+                    raise Exception("Missing required field 'text'")
+                    
                 new_part = {
-                    "text": str(part.get("text", "")),
+                    "text": text,
                     "voice_id": part.get("voice_id"),
                     "actor": part.get("actor")
                 }
