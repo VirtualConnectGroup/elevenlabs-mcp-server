@@ -23,10 +23,11 @@ class ElevenLabsServer:
     
     def parse_script(self, script_json: str) -> tuple[list[dict], list[str]]:
         """
-        Parse the script JSON string into a list of script parts and collect debug information.
+        Parse the input into a list of script parts and collect debug information.
+        Accepts either JSON string containing script array or plain text.
         
         Args:
-            script_json: JSON string containing the script array
+            script_json: JSON string containing script array or plain text
             
         Returns:
             tuple containing:
@@ -34,19 +35,29 @@ class ElevenLabsServer:
                 - list of debug information strings
                 
         Raises:
-            Exception: If JSON is invalid or script format is incorrect
+            Exception: If input format is incorrect or if JSON is malformed
         """
         debug_info = []
-        debug_info.append(f"Raw script JSON: {script_json}")
+        debug_info.append(f"Raw input: {script_json}")
         
-        try:
-            # Parse the JSON string to get the actual script array
-            script_data = json.loads(script_json)
-            script_array = script_data.get('script', [])
-            debug_info.append(f"Parsed script array: {script_array}")
-        except json.JSONDecodeError as e:
-            debug_info.append(f"JSON parse error: {str(e)}")
-            raise Exception(f"Invalid JSON format: {str(e)}")
+        script_array = []
+        # Check if input looks like JSON (starts with '{' after stripping whitespace)
+        if script_json.strip().startswith('{'):
+            try:
+                # Parse as JSON since it looks like JSON
+                script_data = json.loads(script_json)
+                script_array = script_data.get('script', [])
+                debug_info.append(f"Successfully parsed as JSON. Script array: {script_array}")
+            except json.JSONDecodeError as e:
+                debug_info.append(f"JSON parse error: {str(e)}")
+                raise Exception(f"Invalid JSON format: {str(e)}")
+        else:
+            # Treat as plain text
+            debug_info.append("Input is plain text")
+            text = script_json.strip()
+            if text:  # Only create an entry if text is not empty
+                script_array = [{"text": text}]
+                debug_info.append(f"Created script array from plain text: {script_array}")
         
         script_parts = []
         for part in script_array:

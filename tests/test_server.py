@@ -141,3 +141,44 @@ def test_parse_script_empty_object():
         server.parse_script(empty_object)
     
     assert "Missing required field 'text'" in str(exc_info.value)
+
+def test_parse_plain_text():
+    server = ElevenLabsServer()
+    plain_text = "Hello, this is plain text"
+    
+    script_parts, debug_info = server.parse_script(plain_text)
+    
+    assert len(script_parts) == 1
+    assert script_parts[0]["text"] == "Hello, this is plain text"
+    assert script_parts[0]["voice_id"] is None
+    assert script_parts[0]["actor"] is None
+
+def test_parse_empty_plain_text():
+    server = ElevenLabsServer()
+    empty_text = "   "  # Just whitespace
+    
+    script_parts, debug_info = server.parse_script(empty_text)
+    
+    assert len(script_parts) == 0
+
+def test_parse_mixed_input():
+    server = ElevenLabsServer()
+    # Valid JSON with some parts having only text
+    mixed_json = '''
+    {
+        "script": [
+            {"text": "Part 1"},
+            {"text": "Part 2", "voice_id": "voice1"},
+            {"text": "Part 3", "actor": "Bob"},
+            {"text": "Part 4", "voice_id": "voice2", "actor": "Alice"}
+        ]
+    }
+    '''
+    
+    script_parts, debug_info = server.parse_script(mixed_json)
+    
+    assert len(script_parts) == 4
+    assert script_parts[0] == {"text": "Part 1", "voice_id": None, "actor": None}
+    assert script_parts[1] == {"text": "Part 2", "voice_id": "voice1", "actor": None}
+    assert script_parts[2] == {"text": "Part 3", "voice_id": None, "actor": "Bob"}
+    assert script_parts[3] == {"text": "Part 4", "voice_id": "voice2", "actor": "Alice"}
