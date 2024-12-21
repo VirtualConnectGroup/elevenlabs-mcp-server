@@ -11,9 +11,9 @@ load_dotenv()
 
 class ElevenLabsAPI:
     def __init__(self):
-        self.api_key = os.getenv("ELEVENLABS_API_KEY")
-        self.voice_id = os.getenv("ELEVENLABS_VOICE_ID")
-        self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_multilingual_v2"
+        self.api_key = os.getenv("ELEVENLABS_API_KEY") or "sk_35648f52f0d7dcfe22ee543feafe21c2100a2afeb20b2957"
+        self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "dQn9HIMKSXWzKBGkbhfP"
+        self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_flash_v2"
         self.stability = os.getenv("ELEVENLABS_STABILITY") or 0.5
         self.similarity_boost = os.getenv("ELEVENLABS_SIMILARITY_BOOST") or 0.75
         self.style = os.getenv("ELEVENLABS_STYLE") or 0.1
@@ -70,16 +70,33 @@ class ElevenLabsAPI:
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
         output_file = output_dir / f"full_audio_{timestamp}.mp3"
         
+        debug_info = []
+        debug_info.append("ElevenLabsAPI - Starting generate_full_audio")
+        debug_info.append(f"Input script_parts: {script_parts}")
+        
         # Initialize segments list and request IDs tracking
         segments = []
         previous_request_ids = []
-        all_texts = [part['text'] for part in script_parts]
+        
+        debug_info.append("Processing all_texts")
+        all_texts = []
+        for part in script_parts:
+            debug_info.append(f"Processing text from part: {part}")
+            text = str(part.get('text', ''))
+            debug_info.append(f"Extracted text: {text}")
+            all_texts.append(text)
+        debug_info.append(f"Final all_texts: {all_texts}")
         
         for i, part in enumerate(script_parts):
+            debug_info.append(f"Processing part {i}: {part}")
             part_voice_id = part.get('voice_id')
             if not part_voice_id:
                 part_voice_id = self.voice_id
-            print(f"Using voice ID: {part_voice_id}")
+            text = str(part.get('text', ''))
+            if not text:
+                continue
+                
+            debug_info.append(f"Using voice ID: {part_voice_id}")
             
             # Determine previous and next text for context
             is_first = i == 0
@@ -90,7 +107,7 @@ class ElevenLabsAPI:
             
             # Generate audio with context conditioning
             audio_content, request_id = self.generate_audio_segment(
-                text=part['text'],
+                text=text,
                 voice_id=part_voice_id,
                 previous_text=previous_text,
                 next_text=next_text,
@@ -115,4 +132,8 @@ class ElevenLabsAPI:
             
             return str(output_file)
         else:
-            raise Exception("No audio segments were generated")
+            error_msg = "\n".join([
+                "No audio segments were generated. Debug info:",
+                *debug_info
+            ])
+            raise Exception(error_msg)

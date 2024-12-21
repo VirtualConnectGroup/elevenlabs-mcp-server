@@ -31,16 +31,8 @@ class ElevenLabsServer:
                         "type": "object",
                         "properties": {
                             "script": {
-                                "type": "array",
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "voice_id": {"type": "string"},
-                                        "actor": {"type": "string"},
-                                        "text": {"type": "string"}
-                                    },
-                                    "required": ["text"]
-                                }
+                                "type": "string",
+                                "description": "JSON string containing script array"
                             }
                         },
                         "required": ["script"]
@@ -53,7 +45,34 @@ class ElevenLabsServer:
             if name == "generate_audio":
                 try:
                     # Generate audio using the API - using the original API implementation
-                    script_parts = arguments["script"]
+                    # Parse and convert script parts to proper dictionary format
+                    debug_info = []
+                    debug_info.append(f"Raw arguments: {arguments}")
+                    
+                    import json
+                    try:
+                        # Parse the JSON string to get the actual script array
+                        script_data = json.loads(arguments.get('script', '{}'))
+                        script_array = script_data.get('script', [])
+                        debug_info.append(f"Parsed script array: {script_array}")
+                    except json.JSONDecodeError as e:
+                        debug_info.append(f"JSON parse error: {str(e)}")
+                        raise Exception(f"Invalid JSON format: {str(e)}")
+                    
+                    script_parts = []
+                    for part in script_array:
+                        debug_info.append(f"Processing part: {part}")
+                        debug_info.append(f"Part type: {type(part)}")
+                        if isinstance(part, dict):
+                            new_part = {
+                                "text": str(part.get("text", "")),
+                                "voice_id": part.get("voice_id"),
+                                "actor": part.get("actor")
+                            }
+                            debug_info.append(f"Created part: {new_part}")
+                            script_parts.append(new_part)
+                    
+                    debug_info.append(f"Final script_parts: {script_parts}")
                     output_file = self.api.generate_full_audio(
                         script_parts,
                         self.output_dir
@@ -62,45 +81,23 @@ class ElevenLabsServer:
                     # Read the generated audio file
                     with open(output_file, "rb") as f:
                         audio_content = f.read()
-                    
-                    # Return both a success message and the audio content
                     return [
                         types.TextContent(
                             type="text",
                             text=f"Audio generation successful. File saved as: {output_file}"
-                        )
+                        ),
                     ]
                     
                 except Exception as e:
+                    error_msg = "\n".join([
+                        "Error generating audio. Debug info:",
+                        *debug_info,
+                        f"Error: {str(e)}"
+                    ])
                     return [types.TextContent(
                         type="text",
-                        text=f"Error generating audio: {str(e)}"
+                        text=error_msg
                     )]
-                    
-                    
-                job = self.jobs[job_id]
-                response = {
-                    "job_id": job_id,
-                    "status": job.status
-                }
-                
-                if job.status == "completed":
-                    response["resource_uri"] = f"audio://{job_id}"
-                elif job.status == "failed":
-                    response["error"] = job.error
-                    
-            
-                job = self.jobs[job_id]
-                response = {
-                    "job_id": job_id,
-                    "status": job.status
-                }
-                
-                if job.status == "completed":
-                    response["resource_uri"] = f"audio://{job_id}"
-                elif job.status == "failed":
-                    response["error"] = job.error
-                    
             return [types.TextContent(
                 type="text",
                 text="Unknown tool"
