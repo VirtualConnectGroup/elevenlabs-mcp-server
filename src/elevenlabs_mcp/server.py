@@ -182,9 +182,7 @@ class ElevenLabsServer:
                     server_name="elevenlabs-server",
                     server_version="0.1.0",
                     capabilities=self.server.get_capabilities(
-                        notification_options=NotificationOptions(
-                            resources={"listChanged": True}
-                        ),
+                        notification_options=NotificationOptions(),
                         experimental_capabilities={},
                     )
                 )

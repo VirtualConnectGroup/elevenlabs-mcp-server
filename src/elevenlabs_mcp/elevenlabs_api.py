@@ -13,6 +13,10 @@ class ElevenLabsAPI:
     def __init__(self):
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
         self.voice_id = os.getenv("ELEVENLABS_VOICE_ID")
+        self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_multilingual_v2"
+        self.stability = os.getenv("ELEVENLABS_STABILITY") or 0.5
+        self.similarity_boost = os.getenv("ELEVENLABS_SIMILARITY_BOOST") or 0.75
+        self.style = os.getenv("ELEVENLABS_STYLE") or 0.1
         self.base_url = "https://api.elevenlabs.io/v1"
     
     def generate_audio_segment(self, text: str, voice_id: str, output_file: Optional[str] = None,
@@ -27,11 +31,11 @@ class ElevenLabsAPI:
         
         data = {
             "text": text,
-            "model_id": "eleven_multilingual_v2",
+            "model_id": self.model_id,
             "voice_settings": {
-                "stability": 0.5,
-                "similarity_boost": 0.75,
-                "style": 0.1
+                "stability": self.stability,
+                "similarity_boost": self.similarity_boost,
+                "style": self.style
             }
         }
 
