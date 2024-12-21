@@ -115,6 +115,7 @@ source = { editable = "." }
 dependencies = [
     { name = "mcp" },
     { name = "pydub" },
+    { name = "pytest" },
     { name = "python-dotenv" },
     { name = "requests" },
 ]
@@ -129,6 +130,7 @@ dev = [
 requires-dist = [
     { name = "mcp" },
     { name = "pydub" },
+    { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-asyncio", marker = "extra == 'dev'" },
     { name = "python-dotenv" },
