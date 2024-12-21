@@ -11,7 +11,7 @@ load_dotenv()
 
 class ElevenLabsAPI:
     def __init__(self):
-        self.api_key = os.getenv("ELEVENLABS_API_KEY") or "sk_35648f52f0d7dcfe22ee543feafe21c2100a2afeb20b2957"
+        self.api_key = os.getenv("ELEVENLABS_API_KEY")
         self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "dQn9HIMKSXWzKBGkbhfP"
         self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_flash_v2"
         self.stability = os.getenv("ELEVENLABS_STABILITY") or 0.5
