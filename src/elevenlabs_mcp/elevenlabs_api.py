@@ -17,15 +17,15 @@ class ElevenLabsAPI:
         "eleven_multilingual_v2": {"description": "Our most lifelike model with rich emotional expression", "languages": "32",
                                    "supports_stitching": True, "supports_style": True, "wait_time": 0.1},
         "eleven_flash_v2_5": {"description": "Ultra-fast model optimized for real-time use (~75ms†)", "languages": "32",
-                              "supports_stitching": False, "supports_style": False, "wait_time": 0.5},
+                              "supports_stitching": False, "supports_style": False, "wait_time": 0.1},
         "eleven_flash_v2": {"description": "Ultra-fast model optimized for real-time use (~75ms†)", "languages": "English",
-                             "supports_stitching": False, "supports_style": False, "wait_time": 0.5}
+                             "supports_stitching": False, "supports_style": False, "wait_time": 0.1}
     }
 
     def __init__(self):
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
-        self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "dQn9HIMKSXWzKBGkbhfP"
-        self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_flash_v2"
+        self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "iEw1wkYocsNy7I7pteSN"
+        self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_multilingual_v2"
         # Add validation for model_id
         if self.model_id not in self.MODELS:
             raise ValueError(f"Invalid model_id: {self.model_id}. Must be one of {list(self.MODELS.keys())}")
@@ -78,7 +78,9 @@ class ElevenLabsAPI:
                     f.write(response.content)
             return response.content, response.headers["request-id"]
         else:
-            raise Exception(f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}")
+            debug_info.append(response.text)
+            error_message = f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}"
+            raise Exception(error_message)
 
     def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> tuple[str, List[str]]:
         """Generate audio for multiple parts using request stitching. Returns tuple of (output_file_path, debug_info)"""

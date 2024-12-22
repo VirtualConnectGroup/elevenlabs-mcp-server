@@ -15,38 +15,38 @@ async function main() {
   const client = new ElevenLabsClient('uv', ['--directory', 'd:/GitHub/elevenlabs-mcp-server', 'run', 'elevenlabs-mcp']);
   
   try {
-    // // Example 1: Simple text-to-speech
-    // console.log('\nGenerating simple audio...');
-    // const simpleResult = await client.generateSimpleAudio(
-    //   'Hello! This is a test of the ElevenLabs MCP client.'
-    // );
+    // Example 1: Simple text-to-speech
+    console.log('\nGenerating simple audio...');
+    const simpleResult = await client.generateSimpleAudio(
+      'Hello! This is a test of the ElevenLabs MCP client.'
+    );
 
-    // if (simpleResult.success && simpleResult.audioData) {
-    //   console.log('Audio generated successfully!');
-    //   console.log('Audio URI:', simpleResult.audioData.uri);
+    if (simpleResult.success && simpleResult.audioData) {
+      console.log('Audio generated successfully!');
+      console.log('Audio URI:', simpleResult.audioData.uri);
       
-    //   // Save the audio file
-    //   const outputPath = join(outputDir, simpleResult.audioData.name);
-    //   writeFileSync(outputPath, Buffer.from(simpleResult.audioData.data, 'base64'));
-    //   console.log('Audio saved to:', outputPath);
+      // Save the audio file
+      const outputPath = join(outputDir, simpleResult.audioData.name);
+      writeFileSync(outputPath, Buffer.from(simpleResult.audioData.data, 'base64'));
+      console.log('Audio saved to:', outputPath);
       
-    //   // Display debug info
-    //   console.log('\nDebug Information:');
-    //   simpleResult.debugInfo.forEach(line => console.log(line));
-    // } else {
-    //   console.log('Simple generation failed:', simpleResult.message);
-    //   if (simpleResult.debugInfo.length > 0) {
-    //     console.log('\nDebug Information:');
-    //     simpleResult.debugInfo.forEach(line => console.log(line));
-    //   }
-    // }
+      // Display debug info
+      console.log('\nDebug Information:');
+      simpleResult.debugInfo.forEach(line => console.log(line));
+    } else {
+      console.log('Simple generation failed:', simpleResult.message);
+      if (simpleResult.debugInfo.length > 0) {
+        console.log('\nDebug Information:');
+        simpleResult.debugInfo.forEach(line => console.log(line));
+      }
+    }
 
     // Example 2: Multi-part script
     console.log('\nGenerating script audio...');
     const scriptResult = await client.generateScriptAudio({script:[
       { text: 'Hello there!', actor: 'Tom' },
       { text: 'Hi Tom, how are you?', actor: 'Bob' },
-      { text: 'I am doing great, thanks for asking', actor: 'Tom' }
+      { text: 'I\'am doing great, thanks for asking!', actor: 'Tom' }
     ]});
 
     if (scriptResult.success && scriptResult.audioData) {
