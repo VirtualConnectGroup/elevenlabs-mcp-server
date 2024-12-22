@@ -24,58 +24,70 @@ class ElevenLabsServer:
     def parse_script(self, script_json: str) -> tuple[list[dict], list[str]]:
         """
         Parse the input into a list of script parts and collect debug information.
-        Accepts either JSON string containing script array or plain text.
+        Accepts:
+        1. A JSON string with a script array containing dialogue parts
+        2. Plain text to be converted to speech
+        
+        Each dialogue part should have:
+        - text (required): The text to speak
+        - voice_id (optional): The voice to use
+        - actor (optional): The actor/character name
         
         Args:
-            script_json: JSON string containing script array or plain text
+            script_json: Input text or JSON string
             
         Returns:
             tuple containing:
                 - list of parsed script parts
                 - list of debug information strings
-                
-        Raises:
-            Exception: If input format is incorrect or if JSON is malformed
         """
         debug_info = []
         debug_info.append(f"Raw input: {script_json}")
         
         script_array = []
-        # Check if input looks like JSON (starts with '{' after stripping whitespace)
-        if script_json.strip().startswith('{'):
-            try:
-                # Parse as JSON since it looks like JSON
+        
+        # Remove any leading/trailing whitespace
+        script_json = script_json.strip()
+        
+        try:
+            # Try to parse as JSON first
+            if script_json.startswith('['):
+                # Direct array of script parts
+                script_array = json.loads(script_json)
+            elif script_json.startswith('{'):
+                # Object with script array
                 script_data = json.loads(script_json)
                 script_array = script_data.get('script', [])
-                debug_info.append(f"Successfully parsed as JSON. Script array: {script_array}")
-            except json.JSONDecodeError as e:
-                debug_info.append(f"JSON parse error: {str(e)}")
-                raise Exception(f"Invalid JSON format: {str(e)}")
-        else:
-            # Treat as plain text
+            else:
+                # Treat as plain text if not JSON formatted
+                script_array = [{"text": script_json}]
+        except json.JSONDecodeError as e:
+            # If JSON parsing fails and input looks like JSON, raise error
+            if script_json.startswith('{') or script_json.startswith('['):
+                debug_info.append(f"JSON parsing failed: {str(e)}")
+                raise Exception("Invalid JSON format")
+            # Otherwise treat as plain text
             debug_info.append("Input is plain text")
-            text = script_json.strip()
-            if text:  # Only create an entry if text is not empty
-                script_array = [{"text": text}]
-                debug_info.append(f"Created script array from plain text: {script_array}")
+            script_array = [{"text": script_json}]
         
         script_parts = []
         for part in script_array:
-            debug_info.append(f"Processing part: {part}")
-            debug_info.append(f"Part type: {type(part)}")
-            if isinstance(part, dict):
-                text = part.get("text", "").strip()
-                if not text:
-                    debug_info.append("Missing or empty text field")
-                    raise Exception("Missing required field 'text'")
-                    
-                new_part = {
-                    "text": text,
-                    "voice_id": part.get("voice_id"),
-                    "actor": part.get("actor")
-                }
-                debug_info.append(f"Created part: {new_part}")
-                script_parts.append(new_part)
+            if not isinstance(part, dict):
+                debug_info.append(f"Skipping non-dict part: {part}")
+                continue
+                
+            text = part.get("text", "").strip()
+            if not text:
+                debug_info.append("Missing or empty text field")
+                raise Exception("Missing required field 'text'")
+                
+            new_part = {
+                "text": text,
+                "voice_id": part.get("voice_id"),
+                "actor": part.get("actor")
+            }
+            debug_info.append(f"Created part: {new_part}")
+            script_parts.append(new_part)
         
         debug_info.append(f"Final script_parts: {script_parts}")
         return script_parts, debug_info
@@ -104,13 +116,25 @@ class ElevenLabsServer:
                 ),
                 types.Tool(
                     name="generate_audio_script",
-                    description="Generate audio from a structured script with multiple voices and actors",
+                    description="""Generate audio from a structured script with multiple voices and actors. 
+                    Accepts either:
+                    1. Plain text string
+                    2. JSON string with format: {
+                        "script": [
+                            {
+                                "text": "Text to speak",
+                                "voice_id": "optional-voice-id",
+                                "actor": "optional-actor-name"
+                            },
+                            ...
+                        ]
+                    }""",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "script": {
                                 "type": "string",
-                                "description": "JSON string containing script array or plain text"
+                                "description": "JSON string containing script array or plain text. For JSON format, provide an object with a 'script' array containing objects with 'text' (required), 'voice_id' (optional), and 'actor' (optional) fields."
                             }
                         },
                         "required": ["script"]

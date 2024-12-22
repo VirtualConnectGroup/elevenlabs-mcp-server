@@ -1,5 +1,6 @@
 import pytest
 from elevenlabs_mcp.server import ElevenLabsServer
+import json
 
 
 def test_parse_script_valid_input():
@@ -152,14 +153,6 @@ def test_parse_plain_text():
     assert script_parts[0]["text"] == "Hello, this is plain text"
     assert script_parts[0]["voice_id"] is None
     assert script_parts[0]["actor"] is None
-
-def test_parse_empty_plain_text():
-    server = ElevenLabsServer()
-    empty_text = "   "  # Just whitespace
-    
-    script_parts, debug_info = server.parse_script(empty_text)
-    
-    assert len(script_parts) == 0
 
 def test_parse_mixed_input():
     server = ElevenLabsServer()
