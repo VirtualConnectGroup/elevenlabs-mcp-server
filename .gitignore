@@ -24,3 +24,5 @@ output/
 .coverage
 .aider*
 .env
+
+node_modules/
