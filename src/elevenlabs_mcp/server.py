@@ -118,8 +118,10 @@ class ElevenLabsServer:
                 )
             ]
 
+        import base64  # Add this import at the top of the file
+
         @self.server.call_tool()
-        async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
+        async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent | types.EmbeddedResource]:
             try:
                 debug_info = []
                 
@@ -145,10 +147,31 @@ class ElevenLabsServer:
                         self.output_dir
                     )
                     
-                    return [types.TextContent(
-                        type="text",
-                        text=f"Audio generation successful. File saved as: {output_file}"
-                    )]
+                    # Read the generated audio file and encode it as base64
+                    with open(output_file, 'rb') as f:
+                        audio_bytes = f.read()
+                        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                        
+                    # Generate unique URI for the resource
+                    filename = Path(output_file).name
+                    resource_uri = f"audio://{filename}"
+                        
+                    # Return both a status message and the audio file content
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Audio generation successful."
+                        ),
+                        types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri=resource_uri,
+                                name=filename,
+                                blob=audio_base64,
+                                mimeType="audio/mpeg"
+                            )
+                        )
+                    ]
                     
                 elif name == "generate_audio_script":
                     script_json = arguments.get("script", "{}")
@@ -160,10 +183,31 @@ class ElevenLabsServer:
                         self.output_dir
                     )
                     
-                    return [types.TextContent(
-                        type="text",
-                        text=f"Audio generation successful. File saved as: {output_file}"
-                    )]
+                    # Read the generated audio file and encode it as base64
+                    with open(output_file, 'rb') as f:
+                        audio_bytes = f.read()
+                        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+                        
+                    # Generate unique URI for the resource
+                    filename = Path(output_file).name
+                    resource_uri = f"audio://{filename}"
+                        
+                    # Return both a status message and the audio file content
+                    return [
+                        types.TextContent(
+                            type="text",
+                            text=f"Audio generation successful."
+                        ),
+                        types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri=resource_uri,
+                                name=filename,
+                                blob=audio_base64,
+                                mimeType="audio/mpeg"
+                            )
+                        )
+                    ]
                     
                 else:
                     return [types.TextContent(
