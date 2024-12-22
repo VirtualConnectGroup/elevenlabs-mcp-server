@@ -13,6 +13,7 @@ import {
 interface AudioGenerationResponse {
   success: boolean;
   message: string;
+  debugInfo: string[];
   audioData?: {
     uri: string;
     name: string;
@@ -57,13 +58,19 @@ export class ElevenLabsClient {
   private parseToolResponse(response: CallToolResult): AudioGenerationResponse {
     const result: AudioGenerationResponse = {
       success: false,
-      message: ''
+      message: '',
+      debugInfo: []
     };
 
     if (response.content) {
       for (const content of response.content) {
         if (content.type === 'text') {
-          result.message = content.text;
+          // Split the text content into lines
+          const lines = content.text.split('\n');
+          // First line is the status message
+          result.message = lines[0];
+          // Rest are debug info (skip the "Debug info:" line)
+          result.debugInfo = lines.slice(2);
           // Check if the message indicates success
           result.success = result.message.includes('successful');
         } else if (content.type === 'resource') {
@@ -102,7 +109,8 @@ export class ElevenLabsClient {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        message: `Error generating audio: ${errorMessage}`
+        message: `Error generating audio: ${errorMessage}`,
+        debugInfo: []
       };
     }
   }
@@ -130,7 +138,8 @@ export class ElevenLabsClient {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
-        message: `Error generating audio: ${errorMessage}`
+        message: `Error generating audio: ${errorMessage}`,
+        debugInfo: []
       };
     }
   }

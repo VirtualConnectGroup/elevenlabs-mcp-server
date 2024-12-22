@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -6,22 +7,37 @@ from pydub import AudioSegment
 import io
 from datetime import datetime
 from dotenv import load_dotenv
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 load_dotenv()
 
 class ElevenLabsAPI:
+    # Add model list as class constant
+    MODELS = {
+        "eleven_multilingual_v2": {"description": "Our most lifelike model with rich emotional expression", "languages": "32",
+                                   "supports_stitching": True, "supports_style": True, "wait_time": 0.1},
+        "eleven_flash_v2_5": {"description": "Ultra-fast model optimized for real-time use (~75ms†)", "languages": "32",
+                              "supports_stitching": False, "supports_style": False, "wait_time": 0.5},
+        "eleven_flash_v2": {"description": "Ultra-fast model optimized for real-time use (~75ms†)", "languages": "English",
+                             "supports_stitching": False, "supports_style": False, "wait_time": 0.5}
+    }
+
     def __init__(self):
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
         self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "dQn9HIMKSXWzKBGkbhfP"
         self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_flash_v2"
-        self.stability = os.getenv("ELEVENLABS_STABILITY") or 0.5
-        self.similarity_boost = os.getenv("ELEVENLABS_SIMILARITY_BOOST") or 0.75
-        self.style = os.getenv("ELEVENLABS_STYLE") or 0.1
+        # Add validation for model_id
+        if self.model_id not in self.MODELS:
+            raise ValueError(f"Invalid model_id: {self.model_id}. Must be one of {list(self.MODELS.keys())}")
+        self.stability = float(os.getenv("ELEVENLABS_STABILITY", "0.5"))
+        self.similarity_boost = float(os.getenv("ELEVENLABS_SIMILARITY_BOOST", "0.75"))
+        self.style = float(os.getenv("ELEVENLABS_STYLE", "0.1"))
         self.base_url = "https://api.elevenlabs.io/v1"
     
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
     def generate_audio_segment(self, text: str, voice_id: str, output_file: Optional[str] = None,
                       previous_text: Optional[str] = None, next_text: Optional[str] = None,
-                      previous_request_ids: Optional[List[str]] = None) -> tuple[bytes, str]:
+                      previous_request_ids: Optional[List[str]] = None, debug_info: Optional[List[str]] = None) -> tuple[bytes, str]:
         """Generate audio using specified voice with context conditioning"""
         headers = {
             "Accept": "application/json",
@@ -34,18 +50,21 @@ class ElevenLabsAPI:
             "model_id": self.model_id,
             "voice_settings": {
                 "stability": self.stability,
-                "similarity_boost": self.similarity_boost,
-                "style": self.style
+                "similarity_boost": self.similarity_boost
             }
         }
 
-        # Add context conditioning
-        if previous_text is not None:
-            data["previous_text"] = previous_text
-        if next_text is not None:
-            data["next_text"] = next_text
-        if previous_request_ids:
-            data["previous_request_ids"] = previous_request_ids[-3:]  # Maximum of 3 previous IDs
+        if self.MODELS[self.model_id]["supports_style"]:
+            data["style"] = self.style
+
+        # Add context conditioning if model supports it
+        if self.MODELS[self.model_id]["supports_stitching"]:
+            if previous_text is not None:
+                data["previous_text"] = previous_text
+            if next_text is not None:
+                data["next_text"] = next_text
+            if previous_request_ids:
+                data["previous_request_ids"] = previous_request_ids[-3:]  # Maximum of 3 previous IDs
         
         response = requests.post(
             f"{self.base_url}/text-to-speech/{voice_id}",
@@ -59,10 +78,10 @@ class ElevenLabsAPI:
                     f.write(response.content)
             return response.content, response.headers["request-id"]
         else:
-            raise Exception(f"Failed to generate audio: {response.text}")
+            raise Exception(f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}")
 
-    def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> str:
-        """Generate audio for multiple parts using request stitching"""
+    def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> tuple[str, List[str]]:
+        """Generate audio for multiple parts using request stitching. Returns tuple of (output_file_path, debug_info)"""
         # Create output directory if it doesn't exist
         output_dir.mkdir(exist_ok=True)
         
@@ -77,6 +96,7 @@ class ElevenLabsAPI:
         # Initialize segments list and request IDs tracking
         segments = []
         previous_request_ids = []
+        failed_parts = []
         
         debug_info.append("Processing all_texts")
         all_texts = []
@@ -105,21 +125,32 @@ class ElevenLabsAPI:
             previous_text = None if is_first else " ".join(all_texts[:i])
             next_text = None if is_last else " ".join(all_texts[i + 1:])
             
-            # Generate audio with context conditioning
-            audio_content, request_id = self.generate_audio_segment(
-                text=text,
-                voice_id=part_voice_id,
-                previous_text=previous_text,
-                next_text=next_text,
-                previous_request_ids=previous_request_ids
-            )
-            
-            # Add request ID to history
-            previous_request_ids.append(request_id)
-            
-            # Convert audio content to AudioSegment and add to segments
-            audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_content))
-            segments.append(audio_segment)
+            try:
+                # Generate audio with context conditioning
+                audio_content, request_id = self.generate_audio_segment(
+                    text=text,
+                    voice_id=part_voice_id,
+                    previous_text=previous_text,
+                    next_text=next_text,
+                    previous_request_ids=previous_request_ids,
+                    debug_info=debug_info
+                )
+                
+                debug_info.append(f"Successfully generated audio for part {i}")
+                
+                # Add request ID to history
+                previous_request_ids.append(request_id)
+                
+                # Convert audio content to AudioSegment and add to segments
+                audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_content))
+                segments.append(audio_segment)
+
+                # Wait for the specified wait_time
+                time.sleep(self.MODELS[self.model_id]["wait_time"])
+            except Exception as e:
+                debug_info.append(f"Error generating audio: {e}")
+                failed_parts.append(part)
+                continue
         
         # Combine all segments
         if segments:
@@ -129,8 +160,15 @@ class ElevenLabsAPI:
             
             # Export combined audio
             final_audio.export(output_file, format="mp3")
+
+            if failed_parts:
+                debug_info.append(f"Failed parts: {failed_parts}")
+            else:
+                debug_info.append("All parts generated successfully")
             
-            return str(output_file)
+            debug_info.append(f"Model: {self.model_id}")
+            
+            return str(output_file), debug_info
         else:
             error_msg = "\n".join([
                 "No audio segments were generated. Debug info:",

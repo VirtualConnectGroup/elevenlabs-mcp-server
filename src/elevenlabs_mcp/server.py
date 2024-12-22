@@ -166,10 +166,11 @@ class ElevenLabsServer:
                     
                     debug_info.append(f"Created script parts: {script_parts}")
                     
-                    output_file = self.api.generate_full_audio(
+                    output_file, api_debug_info = self.api.generate_full_audio(
                         script_parts,
                         self.output_dir
                     )
+                    debug_info.extend(api_debug_info)
                     
                     # Read the generated audio file and encode it as base64
                     with open(output_file, 'rb') as f:
@@ -184,7 +185,10 @@ class ElevenLabsServer:
                     return [
                         types.TextContent(
                             type="text",
-                            text=f"Audio generation successful."
+                            text="\n".join([
+                                "Audio generation successful. Debug info:",
+                                *debug_info
+                            ])
                         ),
                         types.EmbeddedResource(
                             type="resource",
@@ -201,11 +205,14 @@ class ElevenLabsServer:
                     script_json = arguments.get("script", "{}")
                     script_parts, parse_debug_info = self.parse_script(script_json)
                     debug_info.extend(parse_debug_info)
+
+                    debug_info.append(f"Created script parts: {script_parts}")
                     
-                    output_file = self.api.generate_full_audio(
+                    output_file, api_debug_info = self.api.generate_full_audio(
                         script_parts,
                         self.output_dir
                     )
+                    debug_info.extend(api_debug_info)
                     
                     # Read the generated audio file and encode it as base64
                     with open(output_file, 'rb') as f:
@@ -220,7 +227,10 @@ class ElevenLabsServer:
                     return [
                         types.TextContent(
                             type="text",
-                            text=f"Audio generation successful."
+                            text="\n".join([
+                                "Audio generation successful. Debug info:",
+                                *debug_info
+                            ])
                         ),
                         types.EmbeddedResource(
                             type="resource",
