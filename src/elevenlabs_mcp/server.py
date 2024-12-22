@@ -85,14 +85,32 @@ class ElevenLabsServer:
         async def handle_list_tools() -> list[types.Tool]:
             return [
                 types.Tool(
-                    name="generate_audio",
-                    description="Generate audio from a story script and return the audio content directly",
+                    name="generate_audio_simple",
+                    description="Generate audio from plain text using default voice settings",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "text": {
+                                "type": "string",
+                                "description": "Plain text to convert to audio"
+                            },
+                            "voice_id": {
+                                "type": "string",
+                                "description": "Optional voice ID to use for generation"
+                            }
+                        },
+                        "required": ["text"]
+                    }
+                ),
+                types.Tool(
+                    name="generate_audio_script",
+                    description="Generate audio from a structured script with multiple voices and actors",
                     inputSchema={
                         "type": "object",
                         "properties": {
                             "script": {
                                 "type": "string",
-                                "description": "JSON string containing script array"
+                                "description": "JSON string containing script array or plain text"
                             }
                         },
                         "required": ["script"]
@@ -102,12 +120,39 @@ class ElevenLabsServer:
 
         @self.server.call_tool()
         async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-            if name == "generate_audio":
-                try:
-                    debug_info = []
-                    debug_info.append(f"Raw arguments: {arguments}")
+            try:
+                debug_info = []
+                
+                if name == "generate_audio_simple":
+                    debug_info.append(f"Processing simple audio request")
+                    debug_info.append(f"Arguments: {arguments}")
                     
-                    script_parts, parse_debug_info = self.parse_script(arguments.get('script', '{}'))
+                    text = arguments.get("text", "").strip()
+                    voice_id = arguments.get("voice_id")
+                    
+                    if not text:
+                        raise ValueError("Text cannot be empty")
+                    
+                    script_parts = [{
+                        "text": text,
+                        "voice_id": voice_id
+                    }]
+                    
+                    debug_info.append(f"Created script parts: {script_parts}")
+                    
+                    output_file = self.api.generate_full_audio(
+                        script_parts,
+                        self.output_dir
+                    )
+                    
+                    return [types.TextContent(
+                        type="text",
+                        text=f"Audio generation successful. File saved as: {output_file}"
+                    )]
+                    
+                elif name == "generate_audio_script":
+                    script_json = arguments.get("script", "{}")
+                    script_parts, parse_debug_info = self.parse_script(script_json)
                     debug_info.extend(parse_debug_info)
                     
                     output_file = self.api.generate_full_audio(
@@ -115,30 +160,27 @@ class ElevenLabsServer:
                         self.output_dir
                     )
                     
-                    # Read the generated audio file
-                    with open(output_file, "rb") as f:
-                        audio_content = f.read()
-                    return [
-                        types.TextContent(
-                            type="text",
-                            text=f"Audio generation successful. File saved as: {output_file}"
-                        ),
-                    ]
-                    
-                except Exception as e:
-                    error_msg = "\n".join([
-                        "Error generating audio. Debug info:",
-                        *debug_info,
-                        f"Error: {str(e)}"
-                    ])
                     return [types.TextContent(
                         type="text",
-                        text=error_msg
+                        text=f"Audio generation successful. File saved as: {output_file}"
                     )]
-            return [types.TextContent(
-                type="text",
-                text="Unknown tool"
-            )]
+                    
+                else:
+                    return [types.TextContent(
+                        type="text",
+                        text=f"Unknown tool: {name}"
+                    )]
+                    
+            except Exception as e:
+                error_msg = "\n".join([
+                    "Error generating audio. Debug info:",
+                    *debug_info,
+                    f"Error: {str(e)}"
+                ])
+                return [types.TextContent(
+                    type="text",
+                    text=error_msg
+                )]
 
     async def run(self):
         """Run the server"""
