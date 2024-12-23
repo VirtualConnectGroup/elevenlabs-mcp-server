@@ -48,7 +48,8 @@
 </script>
 
 <main>
-    <h1>Text to Speech</h1>
+    <h2>Basic Text-to-Speech Conversion</h2>
+    <p class="page-description">Convert single text input to speech using optional voice ID.</p>
     
     <form on:submit|preventDefault={generateAudio} class="tts-form">
         <div class="form-group">
@@ -102,79 +103,128 @@
     main {
         max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
+        padding: var(--spacing-8);
     }
     
-    h1 {
-        margin-bottom: 2rem;
-        color: #333;
+    h2 {
+        margin-bottom: var(--spacing-2);
+        color: var(--color-text);
+        font-size: var(--font-size-2xl);
+        text-align: center;
+    }
+
+    .page-description {
+        text-align: center;
+        color: var(--color-text-light);
+        margin-bottom: var(--spacing-8);
     }
     
     .tts-form {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
-        margin-bottom: 2rem;
+        gap: var(--spacing-6);
+        margin-bottom: var(--spacing-8);
+        background: var(--color-surface);
+        padding: var(--spacing-6);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-base);
     }
     
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: var(--spacing-2);
     }
     
     label {
         font-weight: 500;
-        color: #555;
+        color: var(--color-text);
+        font-size: var(--font-size-sm);
     }
     
     textarea, input {
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 0.5rem;
-        font-size: 1rem;
-        font-family: inherit;
+        padding: var(--spacing-3);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-base);
+        background: var(--color-background);
+        transition: all var(--transition-base);
     }
     
     textarea:focus, input:focus {
         outline: none;
-        border-color: #666;
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-sm);
     }
     
     button {
-        padding: 0.75rem 1.5rem;
-        background: #0066cc;
-        color: white;
+        padding: var(--spacing-3) var(--spacing-6);
+        background: var(--color-primary);
+        color: var(--color-surface);
         border: none;
-        border-radius: 0.5rem;
-        font-size: 1rem;
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-base);
+        font-weight: 500;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
-        transition: opacity 0.2s;
+        gap: var(--spacing-2);
+        transition: all var(--transition-base);
+        box-shadow: var(--shadow-sm);
     }
     
     button:disabled {
         opacity: 0.7;
         cursor: not-allowed;
+        transform: none;
     }
     
     button:not(:disabled):hover {
-        opacity: 0.9;
+        background: var(--color-primary-dark);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-base);
     }
     
     .result {
-        margin-top: 2rem;
+        margin-top: var(--spacing-8);
+        background: var(--color-surface);
+        padding: var(--spacing-6);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-base);
     }
     
     .error {
-        color: #dc2626;
-        padding: 1rem;
+        color: var(--color-error);
+        padding: var(--spacing-4);
         background: #fef2f2;
         border: 1px solid #fee2e2;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        border-radius: var(--border-radius-base);
+        margin-bottom: var(--spacing-4);
+    }
+
+    @media (max-width: 640px) {
+        main {
+            padding: var(--spacing-4);
+        }
+
+        h2 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .page-description {
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .tts-form {
+            padding: var(--spacing-4);
+            gap: var(--spacing-4);
+        }
+
+        .result {
+            padding: var(--spacing-4);
+        }
     }
 </style>

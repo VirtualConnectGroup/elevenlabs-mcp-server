@@ -54,7 +54,8 @@
 </script>
 
 <main>
-    <h1>Multi-part Script to Speech</h1>
+    <h2>Multi-part Script to Speech</h2>
+    <p class="page-description">Create a script with multiple parts, each with its own text, voice, and actor.</p>
     
     <form on:submit|preventDefault={generateAudio} class="script-form">
         {#each scriptParts as part, i}
@@ -152,134 +153,202 @@
     main {
         max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
+        padding: var(--spacing-8);
     }
     
-    h1 {
-        margin-bottom: 2rem;
-        color: #333;
+    h2 {
+        margin-bottom: var(--spacing-2);
+        color: var(--color-text);
+        font-size: var(--font-size-2xl);
+        text-align: center;
+    }
+
+    .page-description {
+        text-align: center;
+        color: var(--color-text-light);
+        margin-bottom: var(--spacing-8);
     }
     
     .script-form {
         display: flex;
         flex-direction: column;
-        gap: 2rem;
-        margin-bottom: 2rem;
+        gap: var(--spacing-6);
+        margin-bottom: var(--spacing-8);
     }
     
     .script-part {
-        padding: 1.5rem;
-        background: #f9f9f9;
-        border: 1px solid #eee;
-        border-radius: 0.5rem;
+        padding: var(--spacing-6);
+        background: var(--color-surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-base);
     }
     
     .part-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1rem;
+        margin-bottom: var(--spacing-4);
     }
     
     h3 {
         margin: 0;
-        color: #444;
+        color: var(--color-text);
+        font-size: var(--font-size-lg);
     }
     
     .remove-button {
-        padding: 0.25rem 0.5rem;
-        background: #fee2e2;
-        color: #dc2626;
+        padding: var(--spacing-1) var(--spacing-2);
+        background: var(--color-error);
+        color: white;
         border: none;
-        border-radius: 0.25rem;
+        border-radius: var(--border-radius-sm);
         cursor: pointer;
-        font-size: 0.875rem;
+        font-size: var(--font-size-sm);
+        transition: all var(--transition-base);
     }
     
     .remove-button:hover {
-        background: #fecaca;
+        opacity: 0.9;
+        transform: translateY(-1px);
     }
     
     .form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
+        gap: var(--spacing-2);
+        margin-bottom: var(--spacing-4);
     }
     
     .part-details {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 1rem;
+        gap: var(--spacing-4);
     }
     
     label {
         font-weight: 500;
-        color: #555;
+        color: var(--color-text);
+        font-size: var(--font-size-sm);
     }
     
     textarea, input {
-        padding: 0.75rem;
-        border: 1px solid #ddd;
-        border-radius: 0.5rem;
-        font-size: 1rem;
-        font-family: inherit;
-        background: white;
+        padding: var(--spacing-3);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-base);
+        background: var(--color-background);
+        transition: all var(--transition-base);
     }
     
     textarea:focus, input:focus {
         outline: none;
-        border-color: #666;
+        border-color: var(--color-primary);
+        box-shadow: var(--shadow-sm);
     }
     
     .form-actions {
         display: flex;
-        gap: 1rem;
+        gap: var(--spacing-4);
         justify-content: flex-end;
+        margin-top: var(--spacing-4);
     }
     
     button {
-        padding: 0.75rem 1.5rem;
+        padding: var(--spacing-3) var(--spacing-6);
         border: none;
-        border-radius: 0.5rem;
-        font-size: 1rem;
+        border-radius: var(--border-radius-base);
+        font-size: var(--font-size-base);
+        font-weight: 500;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.5rem;
-        transition: opacity 0.2s;
+        gap: var(--spacing-2);
+        transition: all var(--transition-base);
+        box-shadow: var(--shadow-sm);
     }
     
     .primary-button {
-        background: #0066cc;
-        color: white;
+        background: var(--color-primary);
+        color: var(--color-surface);
     }
     
     .secondary-button {
-        background: #e5e7eb;
-        color: #374151;
+        background: var(--color-secondary-light);
+        color: var(--color-text);
     }
     
     button:disabled {
         opacity: 0.7;
         cursor: not-allowed;
+        transform: none;
     }
     
     button:not(:disabled):hover {
-        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-base);
+    }
+
+    .primary-button:not(:disabled):hover {
+        background: var(--color-primary-dark);
+    }
+
+    .secondary-button:not(:disabled):hover {
+        background: var(--color-secondary);
+        color: var(--color-surface);
     }
     
     .result {
-        margin-top: 2rem;
+        margin-top: var(--spacing-8);
+        background: var(--color-surface);
+        padding: var(--spacing-6);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-base);
     }
     
     .error {
-        color: #dc2626;
-        padding: 1rem;
+        color: var(--color-error);
+        padding: var(--spacing-4);
         background: #fef2f2;
         border: 1px solid #fee2e2;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
+        border-radius: var(--border-radius-base);
+        margin-bottom: var(--spacing-4);
+    }
+
+    @media (max-width: 640px) {
+        main {
+            padding: var(--spacing-4);
+        }
+
+        h2 {
+            font-size: var(--font-size-xl);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .page-description {
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-6);
+        }
+
+        .script-part {
+            padding: var(--spacing-4);
+        }
+
+        .part-details {
+            grid-template-columns: 1fr;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .form-actions button {
+            width: 100%;
+        }
+
+        .result {
+            padding: var(--spacing-4);
+        }
     }
 </style>

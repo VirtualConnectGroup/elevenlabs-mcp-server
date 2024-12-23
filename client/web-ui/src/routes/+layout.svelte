@@ -3,6 +3,12 @@
 </script>
 
 <div class="layout">
+    <header>
+        <div class="header-content">
+            <h1>ElevenLabs MCP Client Example</h1>
+            <p>A sample MCP client implementation using SvelteKit, demonstrating integration with ElevenLabs Text-to-Speech API through MCP Server.</p>
+        </div>
+    </header>
     <nav>
         <a 
             href="/" 
@@ -26,34 +32,86 @@
 <style>
     .layout {
         min-height: 100vh;
-        background: #f8fafc;
+        background: var(--color-background);
+    }
+
+    header {
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--border-color);
+        padding: var(--spacing-8) var(--spacing-4);
+        text-align: center;
+    }
+
+    .header-content {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    header h1 {
+        color: var(--color-text);
+        font-size: var(--font-size-2xl);
+        margin: 0 0 var(--spacing-2);
+    }
+
+    header p {
+        color: var(--color-text-light);
+        font-size: var(--font-size-base);
+        margin: 0;
+        line-height: 1.5;
     }
 
     nav {
-        background: white;
-        padding: 1rem;
-        border-bottom: 1px solid #e2e8f0;
+        background: var(--color-surface);
+        padding: var(--spacing-4);
+        border-bottom: 1px solid var(--border-color);
         display: flex;
-        gap: 1rem;
+        gap: var(--spacing-4);
         justify-content: center;
+        box-shadow: var(--shadow-sm);
     }
 
     .nav-link {
-        padding: 0.5rem 1rem;
-        color: #64748b;
+        padding: var(--spacing-2) var(--spacing-4);
+        color: var(--color-secondary);
         text-decoration: none;
-        border-radius: 0.5rem;
-        transition: all 0.2s;
+        border-radius: var(--border-radius-base);
+        transition: all var(--transition-base);
+        font-size: var(--font-size-base);
     }
 
     .nav-link:hover {
-        background: #f1f5f9;
-        color: #0f172a;
+        background: var(--color-background);
+        color: var(--color-text);
+        transform: translateY(-1px);
     }
 
     .nav-link.active {
-        background: #e2e8f0;
-        color: #0f172a;
+        background: var(--color-primary);
+        color: var(--color-surface);
         font-weight: 500;
+    }
+
+    @media (max-width: 640px) {
+        header {
+            padding: var(--spacing-6) var(--spacing-4);
+        }
+
+        header h1 {
+            font-size: var(--font-size-xl);
+        }
+
+        header p {
+            font-size: var(--font-size-sm);
+        }
+
+        nav {
+            padding: var(--spacing-3);
+            gap: var(--spacing-2);
+        }
+
+        .nav-link {
+            padding: var(--spacing-2) var(--spacing-3);
+            font-size: var(--font-size-sm);
+        }
     }
 </style>
