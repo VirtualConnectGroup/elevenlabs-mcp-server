@@ -10,12 +10,19 @@ import mcp.server.stdio
 from dotenv import load_dotenv
 import json
 from datetime import datetime
+import logging
+from urllib.parse import unquote
 
 from .elevenlabs_api import ElevenLabsAPI
 from .database import Database
 from .models import AudioJob
 
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 class ElevenLabsServer:
     def __init__(self):
@@ -128,7 +135,8 @@ class ElevenLabsServer:
             try:
                 # Extract job_id if present
                 parts = uri_str.split("/")
-                if len(parts) > 3:
+                logging.info(f"Parts: {parts}")
+                if len(parts) > 3 and unquote(parts[3]) != '{job_id}':
                     job_id = parts[3]
                     job = await self.db.get_job(job_id)
                     if not job:

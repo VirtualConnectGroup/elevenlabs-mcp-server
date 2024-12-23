@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { elevenlabsClient, type JobHistory } from '$lib/client';
+  import type { JobHistory } from '$lib/client';
 
   let jobs: JobHistory[] = [];
   let loading = true;
@@ -10,7 +10,11 @@
     try {
       loading = true;
       error = null;
-      jobs = await elevenlabsClient.getJobHistory();
+      const response = await fetch('/api/history');
+      if (!response.ok) {
+        throw new Error('Failed to load job history');
+      }
+      jobs = await response.json();
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to load job history';
     } finally {
@@ -24,11 +28,15 @@
     }
 
     try {
-      const success = await elevenlabsClient.deleteJob(jobId);
-      if (success) {
+      const response = await fetch(`/api/history?id=${jobId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
         jobs = jobs.filter(job => job.id !== jobId);
       } else {
-        error = 'Failed to delete job';
+        const data = await response.json();
+        error = data.error || 'Failed to delete job';
       }
     } catch (e) {
       error = e instanceof Error ? e.message : 'Failed to delete job';
