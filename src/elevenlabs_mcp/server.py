@@ -120,39 +120,29 @@ class ElevenLabsServer:
             ]
 
         @self.server.read_resource()
-        async def handle_read_resource(uri: str) -> list[types.ResourceContents]:
-            if not uri.startswith("voiceover://history"):
-                return []
+        async def handle_read_resource(uri: types.AnyUrl) -> str:
+            uri_str = str(uri)
+            if not uri_str.startswith("voiceover://history"):
+                raise ValueError(f"Invalid resource URI: {uri_str}")
 
             try:
                 # Extract job_id if present
-                parts = uri.split("/")
+                parts = uri_str.split("/")
                 if len(parts) > 3:
                     job_id = parts[3]
                     job = await self.db.get_job(job_id)
                     if not job:
-                        return []
+                        return json.dumps({"error": "Job not found"}, indent=2)
                     jobs = [job]
                 else:
                     jobs = await self.db.get_all_jobs()
 
                 # Convert jobs to JSON
                 jobs_data = [job.to_dict() for job in jobs]
-                return [
-                    types.TextResourceContents(
-                        uri=uri,
-                        text=json.dumps(jobs_data, indent=2),
-                        mimeType="application/json"
-                    )
-                ]
+                return json.dumps(jobs_data, indent=2)
+                
             except Exception as e:
-                return [
-                    types.TextResourceContents(
-                        uri=uri,
-                        text=json.dumps({"error": str(e)}),
-                        mimeType="application/json"
-                    )
-                ]
+                return json.dumps({"error": str(e)}, indent=2)
 
     def setup_tools(self):
         @self.server.list_tools()
