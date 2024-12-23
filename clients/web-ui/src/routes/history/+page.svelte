@@ -65,48 +65,39 @@
   });
 </script>
 
-<div class="container mx-auto px-4 py-8">
-  <h1 class="text-3xl font-bold mb-6">Voiceover History</h1>
+<main>
+  <h2>Voiceover History</h2>
+  <p class="page-description">View and manage your previously generated voiceover jobs.</p>
 
   {#if error}
-    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+    <div class="error">
       {error}
     </div>
   {/if}
 
   {#if loading}
-    <div class="flex justify-center items-center h-32">
+    <div class="loading-container">
       <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
     </div>
   {:else if jobs.length === 0}
-    <div class="text-center text-gray-600 py-8">
+    <div class="empty-state">
       No voiceover jobs found
     </div>
   {:else}
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+    <div class="history-table">
+      <table>
+        <thead>
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              ID
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Status
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Created
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Progress
-            </th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Actions
-            </th>
+            <th>ID</th>
+            <th>Status</th>
+            <th>Created</th>
+            <th>Progress</th>
+            <th>Actions</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody>
           {#each jobs as job}
-            <tr>
+            <tr class="result-row">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {job.id.slice(0, 8)}...
               </td>
@@ -127,36 +118,37 @@
                 {job.completed_parts} / {job.total_parts} parts
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <button
-                  on:click={() => deleteJob(job.id)}
-                  class="text-red-600 hover:text-red-900"
-                >
-                  Delete
-                </button>
-                {#if job.output_file}
-                  <a
-                    href={job.output_file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="ml-4 text-blue-600 hover:text-blue-900"
+                <div class="actions">
+                  <button
+                    on:click={() => deleteJob(job.id)}
+                    class="button button-danger"
                   >
-                    Download
-                  </a>
-                {/if}
+                    Delete
+                  </button>
+                  {#if job.output_file}
+                    <a
+                      href={`/api/download?id=${job.id}`}
+                      download={`voiceover-${job.id}.mp3`}
+                      class="button button-primary"
+                    >
+                      Download
+                    </a>
+                  {/if}
+                </div>
               </td>
             </tr>
-            <tr>
-              <td colspan="5" class="px-6 py-4">
-                <div class="text-sm text-gray-900">
+            <tr class="script-row">
+              <td colspan="5">
+                <div class="script-content">
                   <strong>Script:</strong>
                   {#each job.script_parts as part}
-                    <div class="mt-1 pl-4">
+                    <div class="script-part">
                       {#if part.actor}
-                        <span class="text-blue-600">{part.actor}:</span>
+                        <span class="actor">{part.actor}:</span>
                       {/if}
                       {part.text}
                       {#if part.voice_id}
-                        <span class="text-gray-500 text-xs">(Voice: {part.voice_id})</span>
+                        <span class="voice-id">(Voice: {part.voice_id})</span>
                       {/if}
                     </div>
                   {/each}
@@ -168,4 +160,167 @@
       </table>
     </div>
   {/if}
-</div>
+</main>
+
+<style>
+  main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-8);
+  }
+
+  h2 {
+    margin-bottom: var(--spacing-2);
+    color: var(--color-text);
+    font-size: var(--font-size-2xl);
+    text-align: center;
+  }
+
+  .page-description {
+    text-align: center;
+    color: var(--color-text-light);
+    margin-bottom: var(--spacing-8);
+  }
+
+  .loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 8rem;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--color-text-light);
+    padding: var(--spacing-8);
+  }
+
+  .error {
+    color: var(--color-error);
+    padding: var(--spacing-4);
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    border-radius: var(--border-radius-base);
+    margin-bottom: var(--spacing-4);
+  }
+
+  .history-table {
+    background: var(--color-surface);
+    padding: var(--spacing-6);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-base);
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    text-align: left;
+    padding: var(--spacing-4) var(--spacing-6);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-light);
+    background: var(--color-background);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: var(--spacing-4) var(--spacing-6);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .result-row:hover {
+    background: var(--color-background);
+  }
+
+  .script-row td {
+    background: var(--color-background);
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .script-content {
+    padding: var(--spacing-2) 0;
+  }
+
+  .script-part {
+    margin: var(--spacing-2) 0;
+    padding-left: var(--spacing-4);
+  }
+
+  .actor {
+    color: var(--color-primary);
+    font-weight: 500;
+    margin-right: var(--spacing-2);
+  }
+
+  .voice-id {
+    color: var(--color-text-light);
+    font-size: var(--font-size-xs);
+    margin-left: var(--spacing-2);
+  }
+
+  .actions {
+    display: flex;
+    gap: var(--spacing-2);
+    align-items: center;
+  }
+
+  .button {
+    padding: var(--spacing-1) var(--spacing-3);
+    border: none;
+    border-radius: var(--border-radius-base);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-base);
+    min-width: 70px;
+  }
+
+  .button:hover {
+    transform: translateY(-1px);
+    opacity: 0.9;
+  }
+
+  .button-primary {
+    background: var(--color-primary);
+    color: var(--color-surface);
+  }
+
+  .button-danger {
+    background: var(--color-error);
+    color: var(--color-surface);
+  }
+
+  @media (max-width: 640px) {
+    main {
+      padding: var(--spacing-4);
+    }
+
+    h2 {
+      font-size: var(--font-size-xl);
+      margin-bottom: var(--spacing-2);
+    }
+
+    .page-description {
+      font-size: var(--font-size-sm);
+      margin-bottom: var(--spacing-6);
+    }
+
+    .history-table {
+      padding: var(--spacing-2);
+    }
+
+    th, td {
+      padding: var(--spacing-3) var(--spacing-4);
+    }
+  }
+</style>
