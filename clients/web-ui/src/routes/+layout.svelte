@@ -24,6 +24,13 @@
         >
             Script TTS
         </a>
+        <a 
+            href="/history" 
+            class="nav-link" 
+            class:active={$page.url.pathname === '/history'}
+        >
+            History
+        </a>
     </nav>
 
     <slot />

@@ -1,13 +1,19 @@
 import asyncio
+import base64
+import os
 from pathlib import Path
+import uuid
 import mcp.types as types
 from mcp.server import Server, NotificationOptions
 from mcp.server.models import InitializationOptions
 import mcp.server.stdio
 from dotenv import load_dotenv
 import json
+from datetime import datetime
 
 from .elevenlabs_api import ElevenLabsAPI
+from .database import Database
+from .models import AudioJob
 
 load_dotenv()
 
@@ -17,10 +23,18 @@ class ElevenLabsServer:
         self.api = ElevenLabsAPI()
         self.output_dir = Path("output")
         self.output_dir.mkdir(exist_ok=True)
+        # Set output directory for database
+        os.environ["ELEVENLABS_OUTPUT_DIR"] = str(self.output_dir.absolute())
+        self.db = Database()
         
         # Set up handlers
         self.setup_tools()
+        self.setup_resources()
     
+    async def initialize(self):
+        """Initialize server components."""
+        await self.db.initialize()
+
     def parse_script(self, script_json: str) -> tuple[list[dict], list[str]]:
         """
         Parse the input into a list of script parts and collect debug information.
@@ -92,6 +106,54 @@ class ElevenLabsServer:
         debug_info.append(f"Final script_parts: {script_parts}")
         return script_parts, debug_info
 
+    def setup_resources(self):
+        """Set up MCP resources."""
+        @self.server.list_resource_templates()
+        async def handle_list_resource_templates() -> list[types.ResourceTemplate]:
+            return [
+                types.ResourceTemplate(
+                    uriTemplate="voiceover://history/{job_id}",
+                    name="Voiceover Job History",
+                    description="Access voiceover job history. Provide job_id for specific job or omit for all jobs.",
+                    mimeType="application/json"
+                )
+            ]
+
+        @self.server.read_resource()
+        async def handle_read_resource(uri: str) -> list[types.ResourceContents]:
+            if not uri.startswith("voiceover://history"):
+                return []
+
+            try:
+                # Extract job_id if present
+                parts = uri.split("/")
+                if len(parts) > 3:
+                    job_id = parts[3]
+                    job = await self.db.get_job(job_id)
+                    if not job:
+                        return []
+                    jobs = [job]
+                else:
+                    jobs = await self.db.get_all_jobs()
+
+                # Convert jobs to JSON
+                jobs_data = [job.to_dict() for job in jobs]
+                return [
+                    types.TextResourceContents(
+                        uri=uri,
+                        text=json.dumps(jobs_data, indent=2),
+                        mimeType="application/json"
+                    )
+                ]
+            except Exception as e:
+                return [
+                    types.TextResourceContents(
+                        uri=uri,
+                        text=json.dumps({"error": str(e)}),
+                        mimeType="application/json"
+                    )
+                ]
+
     def setup_tools(self):
         @self.server.list_tools()
         async def handle_list_tools() -> list[types.Tool]:
@@ -139,10 +201,22 @@ class ElevenLabsServer:
                         },
                         "required": ["script"]
                     }
+                ),
+                types.Tool(
+                    name="delete_job",
+                    description="Delete a voiceover job and its associated files",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "job_id": {
+                                "type": "string",
+                                "description": "ID of the job to delete"
+                            }
+                        },
+                        "required": ["job_id"]
+                    }
                 )
             ]
-
-        import base64  # Add this import at the top of the file
 
         @self.server.call_tool()
         async def handle_call_tool(name: str, arguments: dict) -> list[types.TextContent | types.EmbeddedResource]:
@@ -166,11 +240,36 @@ class ElevenLabsServer:
                     
                     debug_info.append(f"Created script parts: {script_parts}")
                     
-                    output_file, api_debug_info = self.api.generate_full_audio(
-                        script_parts,
-                        self.output_dir
+                    # Create job record
+                    job_id = str(uuid.uuid4())
+                    job = AudioJob(
+                        id=job_id,
+                        status="pending",
+                        script_parts=script_parts,
+                        total_parts=1
                     )
-                    debug_info.extend(api_debug_info)
+                    await self.db.insert_job(job)
+                    debug_info.append(f"Created job record: {job_id}")
+
+                    try:
+                        job.status = "processing"
+                        await self.db.update_job(job)
+
+                        output_file, api_debug_info = self.api.generate_full_audio(
+                            script_parts,
+                            self.output_dir
+                        )
+                        debug_info.extend(api_debug_info)
+
+                        job.status = "completed"
+                        job.output_file = str(output_file)
+                        job.completed_parts = 1
+                        await self.db.update_job(job)
+                    except Exception as e:
+                        job.status = "failed"
+                        job.error = str(e)
+                        await self.db.update_job(job)
+                        raise
                     
                     # Read the generated audio file and encode it as base64
                     with open(output_file, 'rb') as f:
@@ -206,13 +305,36 @@ class ElevenLabsServer:
                     script_parts, parse_debug_info = self.parse_script(script_json)
                     debug_info.extend(parse_debug_info)
 
-                    debug_info.append(f"Created script parts: {script_parts}")
-                    
-                    output_file, api_debug_info = self.api.generate_full_audio(
-                        script_parts,
-                        self.output_dir
+                    # Create job record
+                    job_id = str(uuid.uuid4())
+                    job = AudioJob(
+                        id=job_id,
+                        status="pending",
+                        script_parts=script_parts,
+                        total_parts=1
                     )
-                    debug_info.extend(api_debug_info)
+                    await self.db.insert_job(job)
+                    debug_info.append(f"Created job record: {job_id}")
+
+                    try:
+                        job.status = "processing"
+                        await self.db.update_job(job)
+
+                        output_file, api_debug_info = self.api.generate_full_audio(
+                            script_parts,
+                            self.output_dir
+                        )
+                        debug_info.extend(api_debug_info)
+
+                        job.status = "completed"
+                        job.output_file = str(output_file)
+                        job.completed_parts = 1
+                        await self.db.update_job(job)
+                    except Exception as e:
+                        job.status = "failed"
+                        job.error = str(e)
+                        await self.db.update_job(job)
+                        raise
                     
                     # Read the generated audio file and encode it as base64
                     with open(output_file, 'rb') as f:
@@ -242,6 +364,38 @@ class ElevenLabsServer:
                             )
                         )
                     ]
+
+                elif name == "delete_job":
+                    job_id = arguments.get("job_id")
+                    if not job_id:
+                        raise ValueError("job_id is required")
+
+                    # Get job to check if it exists and get file path
+                    job = await self.db.get_job(job_id)
+                    if not job:
+                        return [types.TextContent(
+                            type="text",
+                            text=f"Job {job_id} not found"
+                        )]
+
+                    # Delete associated audio file if it exists
+                    if job.output_file:
+                        try:
+                            output_path = Path(job.output_file)
+                            if output_path.exists():
+                                output_path.unlink()
+                        except Exception as e:
+                            return [types.TextContent(
+                                type="text",
+                                text=f"Error deleting audio file: {str(e)}"
+                            )]
+
+                    # Delete job from database
+                    deleted = await self.db.delete_job(job_id)
+                    return [types.TextContent(
+                        type="text",
+                        text=f"Successfully deleted job {job_id} and associated files"
+                    )]
                     
                 else:
                     return [types.TextContent(
@@ -262,6 +416,11 @@ class ElevenLabsServer:
 
     async def run(self):
         """Run the server"""
+        try:
+            await self.initialize()
+        except Exception as e:
+            print(f"Error initializing server: {e}")
+            raise
         async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
             await self.server.run(
                 read_stream,
