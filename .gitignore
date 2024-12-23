@@ -24,5 +24,6 @@ output/
 .coverage
 .aider*
 .env
+.history/
 
 node_modules/
