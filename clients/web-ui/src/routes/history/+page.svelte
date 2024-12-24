@@ -5,6 +5,7 @@
   let jobs: JobHistory[] = [];
   let loading = true;
   let error: string | null = null;
+  let expandedJobId: string | null = null;
 
   async function loadJobs() {
     try {
@@ -60,6 +61,14 @@
     }
   }
 
+  function toggleExpand(jobId: string) {
+    expandedJobId = expandedJobId === jobId ? null : jobId;
+  }
+
+  function getChevronClass(jobId: string) {
+    return expandedJobId === jobId ? 'rotate-180' : '';
+  }
+
   onMount(() => {
     loadJobs();
   });
@@ -88,16 +97,35 @@
       <table>
         <thead>
           <tr>
+            <th class="w-8"></th>
             <th>ID</th>
             <th>Status</th>
             <th>Created</th>
             <th>Progress</th>
-            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {#each jobs as job}
-            <tr class="result-row">
+            <tr 
+              class="result-row" 
+              class:expanded={expandedJobId === job.id}
+              on:click={() => toggleExpand(job.id)}
+            >
+              <td class="w-8 px-2 text-center">
+                <svg 
+                  class="w-2.5 h-2.5 inline-block transition-transform duration-200 text-gray-400 {getChevronClass(job.id)}" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path 
+                    stroke-linecap="round" 
+                    stroke-linejoin="round" 
+                    stroke-width="2.5" 
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {job.id.slice(0, 8)}...
               </td>
@@ -117,44 +145,47 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {job.completed_parts} / {job.total_parts} parts
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                <div class="actions">
-                  <button
-                    on:click={() => deleteJob(job.id)}
-                    class="button button-danger"
-                  >
-                    Delete
-                  </button>
-                  {#if job.output_file}
-                    <a
-                      href={`/api/download?id=${job.id}`}
-                      download={`voiceover-${job.id}.mp3`}
-                      class="button button-primary"
-                    >
-                      Download
-                    </a>
-                  {/if}
-                </div>
-              </td>
             </tr>
-            <tr class="script-row">
-              <td colspan="5">
-                <div class="script-content">
-                  <strong>Script:</strong>
-                  {#each job.script_parts as part}
-                    <div class="script-part">
-                      {#if part.actor}
-                        <span class="actor">{part.actor}:</span>
-                      {/if}
-                      {part.text}
-                      {#if part.voice_id}
-                        <span class="voice-id">(Voice: {part.voice_id})</span>
+            {#if expandedJobId === job.id}
+              <tr class="details-row">
+                <td colspan="5">
+                  <div class="details-content">
+                    <div class="actions">
+                      <button
+                        on:click|stopPropagation={() => deleteJob(job.id)}
+                        class="button button-danger"
+                      >
+                        Delete
+                      </button>
+                      {#if job.output_file}
+                        <a
+                          href={`/api/download?id=${job.id}`}
+                          download={`voiceover-${job.id}.mp3`}
+                          class="button button-primary"
+                          on:click|stopPropagation={() => {}}
+                        >
+                          Download
+                        </a>
                       {/if}
                     </div>
-                  {/each}
-                </div>
-              </td>
-            </tr>
+                    <div class="script-content">
+                      <strong>Script:</strong>
+                      {#each job.script_parts as part}
+                        <div class="script-part">
+                          {#if part.actor}
+                            <span class="actor">{part.actor}:</span>
+                          {/if}
+                          {part.text}
+                          {#if part.voice_id}
+                            <span class="voice-id">(Voice: {part.voice_id})</span>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            {/if}
           {/each}
         </tbody>
       </table>
@@ -235,13 +266,33 @@
     border-bottom: 1px solid var(--border-color);
   }
 
+  .result-row {
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
   .result-row:hover {
     background: var(--color-background);
   }
 
-  .script-row td {
+  .result-row.expanded {
+    background: var(--color-background);
+  }
+
+  .details-row td {
+    padding: var(--spacing-4);
     background: var(--color-background);
     border-bottom: 1px solid var(--border-color);
+  }
+
+  .details-content {
+    padding: var(--spacing-2) var(--spacing-4);
+  }
+
+  .actions {
+    margin-bottom: var(--spacing-4);
+    display: flex;
+    gap: var(--spacing-2);
   }
 
   .script-content {
@@ -263,12 +314,6 @@
     color: var(--color-text-light);
     font-size: var(--font-size-xs);
     margin-left: var(--spacing-2);
-  }
-
-  .actions {
-    display: flex;
-    gap: var(--spacing-2);
-    align-items: center;
   }
 
   .button {
@@ -322,5 +367,9 @@
     th, td {
       padding: var(--spacing-3) var(--spacing-4);
     }
+  }
+
+  .rotate-180 {
+    transform: rotate(180deg);
   }
 </style>

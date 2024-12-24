@@ -1,11 +1,12 @@
 import { ElevenLabsClient } from "./elevenlabs-client.js";
 import { browser } from "$app/environment";
+import { env } from "$env/dynamic/private";
 
 // Only initialize the client on the server side
 export const elevenlabsClient = !browser
   ? new ElevenLabsClient("uv", [
       "--directory",
-      "/home/atomrem/dev/Projects/elevenlabs-mcp-server/src/elevenlabs_mcp",
+      env.MCP_SERVER_DIR || "",
       "run",
       "elevenlabs-mcp",
     ])

@@ -77,10 +77,8 @@ export class ElevenLabsClient {
 
   private parseHistoryResponse(response: ReadResourceResult): JobHistory[] {
     console.log("Raw history response:", response);
-    console.log("Response contents:", response.contents);
 
     for (const content of response.contents) {
-      console.log("Processing content:", content);
       if (
         content.mimeType === "text/plain" &&
         typeof content.text === "string"
@@ -88,9 +86,7 @@ export class ElevenLabsClient {
         try {
           // Clean up the text content by removing any leading/trailing whitespace and quotes
           const cleanText = content.text.trim().replace(/^['"]|['"]$/g, "");
-          console.log("Cleaned text content:", cleanText);
           const parsed = JSON.parse(cleanText);
-          console.log("Parsed content:", parsed);
           if (Array.isArray(parsed)) {
             return parsed as JobHistory[];
           } else if (typeof parsed === "object" && parsed !== null) {
@@ -233,7 +229,7 @@ export class ElevenLabsClient {
       const request: ReadResourceRequest = {
         method: "resources/read",
         params: {
-          uri: "voiceover://history/{job_id}",
+          uri: "voiceover://history",
         },
       };
 

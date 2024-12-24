@@ -1,35 +1,18 @@
 import { json, type RequestEvent } from "@sveltejs/kit";
-import { ElevenLabsClient } from "$lib/elevenlabs/client";
-import { env } from "$env/dynamic/private";
-
-let client: ElevenLabsClient | null = null;
-
-function getClient() {
-  if (!client) {
-    if (!env.MCP_SERVER_DIR) {
-      throw new Error("MCP_SERVER_DIR environment variable is not set");
-    }
-
-    client = new ElevenLabsClient("uv", [
-      "--directory",
-      env.MCP_SERVER_DIR,
-      "run",
-      "elevenlabs-mcp",
-    ]);
-  }
-  return client;
-}
+import { elevenlabsClient } from "$lib/client";
 
 export async function POST({ request }: RequestEvent) {
   try {
     const { text, voice_id, type = "simple", script } = await request.json();
-    const ttsClient = getClient();
+    if (!elevenlabsClient) {
+      throw new Error("MCP client not initialized");
+    }
 
     let result;
     if (type === "simple") {
-      result = await ttsClient.generateSimpleAudio(text, voice_id);
+      result = await elevenlabsClient.generateSimpleAudio(text, voice_id);
     } else if (type === "script") {
-      result = await ttsClient.generateScriptAudio(script);
+      result = await elevenlabsClient.generateScriptAudio(script);
     } else {
       throw new Error(`Invalid TTS type: ${type}`);
     }

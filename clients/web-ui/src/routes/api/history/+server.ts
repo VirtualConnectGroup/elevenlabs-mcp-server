@@ -2,8 +2,6 @@ import { elevenlabsClient } from "$lib/client";
 import { json } from "@sveltejs/kit";
 
 export async function GET() {
-  console.log("GET /api/history - Client:", elevenlabsClient);
-
   if (!elevenlabsClient) {
     console.error("MCP client not initialized");
     return new Response(
