@@ -41,6 +41,17 @@ class ElevenLabsServer:
     async def initialize(self):
         """Initialize server components."""
         await self.db.initialize()
+        
+        # Initialize voices cache
+        try:
+            voices, needs_refresh = await self.db.get_voices()
+            if needs_refresh:
+                logging.info("Fetching initial voices data")
+                fresh_voices = await asyncio.to_thread(self.api.get_voices)
+                await self.db.upsert_voices(fresh_voices)
+                logging.info(f"Cached {len(fresh_voices)} voices")
+        except Exception as e:
+            logging.error(f"Error initializing voices cache: {e}")
 
     def parse_script(self, script_json: str) -> tuple[list[dict], list[str]]:
         """
@@ -123,12 +134,44 @@ class ElevenLabsServer:
                     name="Voiceover Job History",
                     description="Access voiceover job history. Provide job_id for specific job or omit for all jobs.",
                     mimeType="application/json"
+                ),
+                types.ResourceTemplate(
+                    uriTemplate="voiceover://voices",
+                    name="Available Voices",
+                    description="Access list of available ElevenLabs voices with metadata",
+                    mimeType="application/json"
                 )
             ]
 
         @self.server.read_resource()
         async def handle_read_resource(uri: types.AnyUrl) -> str:
             uri_str = str(uri)
+            
+            if uri_str == "voiceover://voices":
+                try:
+                    # Get voices from cache
+                    voices, needs_refresh = await self.db.get_voices()
+                    
+                    # Refresh cache if needed
+                    if needs_refresh:
+                        try:
+                            fresh_voices = await asyncio.to_thread(self.api.get_voices)
+                            await self.db.upsert_voices(fresh_voices)
+                            voices = fresh_voices
+                        except Exception as e:
+                            logging.error(f"Error refreshing voices: {e}")
+                            # Continue with cached data if refresh fails
+                            if not voices:
+                                raise  # Re-raise if we have no data at all
+                    
+                    # Ensure default voice is marked
+                    for voice in voices:
+                        voice["is_default"] = voice["voice_id"] == self.api.voice_id
+                    
+                    return json.dumps(voices, indent=2)
+                except Exception as e:
+                    return json.dumps({"error": str(e)}, indent=2)
+            
             if not uri_str.startswith("voiceover://history"):
                 raise ValueError(f"Invalid resource URI: {uri_str}")
 

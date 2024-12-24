@@ -2,7 +2,16 @@ import os
 import time
 import requests
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, TypedDict
+
+class VoiceData(TypedDict):
+    voice_id: str
+    name: str
+    category: str
+    labels: Dict[str, str]
+    description: str
+    preview_url: str
+    high_quality_base_model_ids: List[str]
 from pydub import AudioSegment
 import io
 from datetime import datetime
@@ -21,6 +30,36 @@ class ElevenLabsAPI:
         "eleven_flash_v2": {"description": "Ultra-fast model optimized for real-time use (~75ms†)", "languages": "English",
                              "supports_stitching": False, "supports_style": False, "wait_time": 0.1}
     }
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=4, max=10))
+    def get_voices(self) -> List[VoiceData]:
+        """Fetch available voices from ElevenLabs API"""
+        headers = {
+            "Accept": "application/json",
+            "xi-api-key": self.api_key
+        }
+        
+        response = requests.get(
+            f"{self.base_url}/voices",
+            headers=headers
+        )
+        
+        if response.status_code == 200:
+            voices_data = response.json()["voices"]
+            return [
+                {
+                    "voice_id": voice["voice_id"],
+                    "name": voice["name"],
+                    "category": voice.get("category", ""),
+                    "labels": voice.get("labels", {}),
+                    "description": voice.get("description", ""),
+                    "preview_url": voice.get("preview_url", ""),
+                    "high_quality_base_model_ids": voice.get("high_quality_base_model_ids", [])
+                }
+                for voice in voices_data
+            ]
+        else:
+            raise Exception(f"Failed to fetch voices: {response.text}")
 
     def __init__(self):
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
