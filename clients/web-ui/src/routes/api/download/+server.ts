@@ -1,5 +1,6 @@
 import { error } from "@sveltejs/kit";
 import type { RequestHandler } from "./$types";
+import { elevenlabsClient } from "$lib/client";
 
 export const GET: RequestHandler = async ({ url }) => {
   const fileId = url.searchParams.get("id");
@@ -7,17 +8,28 @@ export const GET: RequestHandler = async ({ url }) => {
     throw error(400, "Missing file ID");
   }
 
+  if (!elevenlabsClient) {
+    throw error(500, "MCP client not initialized");
+  }
+
   try {
-    const response = await fetch(`/api/history/download?id=${fileId}`);
-    if (!response.ok) {
-      throw error(404, "File not found");
+    const result = await elevenlabsClient.getAudioFile(fileId);
+
+    if (!result.success || !result.audioData) {
+      throw error(404, result.error || "File not found");
     }
 
-    const audioBlob = await response.blob();
-    return new Response(audioBlob, {
+    // Convert base64 to Uint8Array
+    const binaryString = atob(result.audioData.data);
+    const binaryData = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      binaryData[i] = binaryString.charCodeAt(i);
+    }
+
+    return new Response(binaryData, {
       headers: {
-        "Content-Type": "audio/mpeg",
-        "Content-Disposition": `attachment; filename="voiceover-${fileId}.mp3"`,
+        "Content-Type": result.audioData.mimeType,
+        "Content-Disposition": `attachment; filename="${result.audioData.name}"`,
       },
     });
   } catch (e) {

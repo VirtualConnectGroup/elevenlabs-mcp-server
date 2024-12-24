@@ -267,6 +267,68 @@ export class ElevenLabsClient {
     }
   }
 
+  async getAudioFile(jobId: string): Promise<{
+    success: boolean;
+    audioData?: {
+      data: string;
+      name: string;
+      mimeType: string;
+    };
+    error?: string;
+  }> {
+    try {
+      await this.connectionPromise;
+
+      const request: CallToolRequest = {
+        method: "tools/call",
+        params: {
+          name: "get_audio_file",
+          arguments: {
+            job_id: jobId,
+          },
+        },
+      };
+
+      const response = await this.client.request(request, CallToolResultSchema);
+
+      // Check for error message
+      for (const content of response.content) {
+        if (content.type === "text") {
+          return {
+            success: false,
+            error: content.text,
+          };
+        }
+      }
+
+      // Look for audio file content
+      for (const content of response.content) {
+        if (content.type === "resource") {
+          const resource = content.resource as BlobResourceContents;
+          return {
+            success: true,
+            audioData: {
+              data: resource.blob,
+              name: resource.name as string,
+              mimeType: resource.mimeType || "audio/mpeg",
+            },
+          };
+        }
+      }
+
+      return {
+        success: false,
+        error: "No audio content found in response",
+      };
+    } catch (error) {
+      console.error("Error getting audio file:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      };
+    }
+  }
+
   async deleteJob(jobId: string): Promise<boolean> {
     try {
       await this.connectionPromise;

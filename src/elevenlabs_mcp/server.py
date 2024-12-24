@@ -213,6 +213,20 @@ class ElevenLabsServer:
                         },
                         "required": ["job_id"]
                     }
+                ),
+                types.Tool(
+                    name="get_audio_file",
+                    description="Get the audio file content for a specific job",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "job_id": {
+                                "type": "string",
+                                "description": "ID of the job to get audio file for"
+                            }
+                        },
+                        "required": ["job_id"]
+                    }
                 )
             ]
 
@@ -394,6 +408,51 @@ class ElevenLabsServer:
                         type="text",
                         text=f"Successfully deleted job {job_id} and associated files"
                     )]
+                
+                elif name == "get_audio_file":
+                    job_id = arguments.get("job_id")
+                    if not job_id:
+                        raise ValueError("job_id is required")
+
+                    # Get job to check if it exists and get file path
+                    job = await self.db.get_job(job_id)
+                    if not job:
+                        return [types.TextContent(
+                            type="text",
+                            text=f"Job {job_id} not found"
+                        )]
+
+                    if not job.output_file:
+                        return [types.TextContent(
+                            type="text",
+                            text=f"No output file found for job {job_id}"
+                        )]
+
+                    # Check if file exists
+                    output_path = Path(job.output_file)
+                    if not output_path.exists():
+                        return [types.TextContent(
+                            type="text",
+                            text=f"Output file not found at {job.output_file}"
+                        )]
+
+                    # Read the audio file and encode it as base64
+                    with open(output_path, 'rb') as f:
+                        audio_bytes = f.read()
+                        audio_base64 = base64.b64encode(audio_bytes).decode('utf-8')
+
+                    # Return the audio file content
+                    return [
+                        types.EmbeddedResource(
+                            type="resource",
+                            resource=types.BlobResourceContents(
+                                uri=f"audio://{output_path.name}",
+                                name=output_path.name,
+                                blob=audio_base64,
+                                mimeType="audio/mpeg"
+                            )
+                        )
+                    ]
                     
                 else:
                     return [types.TextContent(
