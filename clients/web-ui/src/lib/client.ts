@@ -1,4 +1,4 @@
-import { ElevenLabsClient } from "./elevenlabs-client.js";
+import { ElevenLabsClient } from "./elevenlabs-client";
 import { browser } from "$app/environment";
 import { env } from "$env/dynamic/private";
 
@@ -13,4 +13,4 @@ export const elevenlabsClient = !browser
   : null;
 
 // Export the client type for use in components
-export type { JobHistory } from "./elevenlabs-client.js";
+export type { JobHistory } from "./elevenlabs-client";

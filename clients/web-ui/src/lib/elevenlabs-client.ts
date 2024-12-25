@@ -58,6 +58,8 @@ export class ElevenLabsClient {
       args,
     });
 
+    console.log("command:", command, "args:", args);
+
     this.client = new Client(
       {
         name: "elevenlabs-client",
