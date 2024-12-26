@@ -16,7 +16,15 @@ A Model Context Protocol (MCP) server that integrates with ElevenLabs text-to-sp
 
 ## Installation
 
-### Server Installation
+### Using uvx (recommended)
+
+When using [`uvx`](https://docs.astral.sh/uv/guides/tools/), no specific installation is needed:
+
+```bash
+uvx elevenlabs-mcp-server
+```
+
+### Development Installation
 
 1. Clone this repository
 2. Install dependencies:
@@ -26,7 +34,7 @@ A Model Context Protocol (MCP) server that integrates with ElevenLabs text-to-sp
    ```
 3. Copy `.env.example` to `.env` and fill in your ElevenLabs credentials
 
-### Web UI Installation
+## Web UI Installation
 
 1. Navigate to the web UI directory:
    ```bash
@@ -46,13 +54,8 @@ Add the following configuration to your MCP settings file (e.g., `cline_mcp_sett
 {
   "mcpServers": {
     "elevenlabs": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "d:/GitHub/elevenlabs-mcp-server/src/elevenlabs_mcp",
-        "run",
-        "elevenlabs-mcp"
-      ],
+      "command": "uvx",
+      "args": ["elevenlabs-mcp-server"],
       "env": {
         "ELEVENLABS_API_KEY": "your-api-key",
         "ELEVENLABS_VOICE_ID": "your-voice-id",
@@ -69,7 +72,7 @@ Add the following configuration to your MCP settings file (e.g., `cline_mcp_sett
 
 1. Start the MCP server:
    ```bash
-   uv --directory d:/GitHub/elevenlabs-mcp-server/src/elevenlabs_mcp run elevenlabs-mcp
+   uvx elevenlabs-mcp-server
    ```
 
 2. Use with any MCP client (e.g., Claude Desktop)
