@@ -1,8 +1,14 @@
+import logging
 import os
 import time
 import requests
 from pathlib import Path
 from typing import Dict, List, Optional, TypedDict
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 class VoiceData(TypedDict):
     voice_id: str
@@ -205,9 +211,11 @@ class ElevenLabsAPI:
             if failed_parts:
                 debug_info.append(f"Failed parts: {failed_parts}")
             else:
+                logging.debug("All parts generated successfully")
                 debug_info.append("All parts generated successfully")
             
             debug_info.append(f"Model: {self.model_id}")
+            logging.debug(f"Model: {self.model_id}")
             
             return str(output_file), debug_info
         else:
@@ -215,4 +223,5 @@ class ElevenLabsAPI:
                 "No audio segments were generated. Debug info:",
                 *debug_info
             ])
+            logging.error("No audio segments were generated. Debug info: %s", debug_info)
             raise Exception(error_msg)
