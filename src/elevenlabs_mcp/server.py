@@ -20,7 +20,7 @@ from .models import AudioJob
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.CRITICAL,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 

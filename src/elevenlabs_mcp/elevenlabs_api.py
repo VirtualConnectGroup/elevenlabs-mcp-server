@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, TypedDict
 
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.CRITICAL,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
