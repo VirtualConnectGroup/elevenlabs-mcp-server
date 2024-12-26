@@ -43,7 +43,7 @@ class ElevenLabsServer:
         # Set up handlers
         self.setup_tools()
         self.setup_resources()
-        self.setup_notifications()
+        # self.setup_notifications()
     
     async def initialize(self):
         """Initialize server components."""
@@ -340,18 +340,18 @@ class ElevenLabsServer:
                         job.status = "processing"
                         await self.db.update_job(job)
 
-                        # Send progress notification
-                        if hasattr(self.server, 'session'):
-                            await self.server.session.send_notification({
-                                "method": "notifications/progress",
-                                "params": {
-                                    "progressToken": str(job.id),
-                                    "progress": {
-                                        "kind": "begin",
-                                        "message": "Starting audio generation"
-                                    }
-                                }
-                            })
+                        # # Send progress notification
+                        # if hasattr(self.server, 'session'):
+                        #     await self.server.session.send_notification({
+                        #         "method": "notifications/progress",
+                        #         "params": {
+                        #             "progressToken": str(job.id),
+                        #             "progress": {
+                        #                 "kind": "begin",
+                        #                 "message": "Starting audio generation"
+                        #             }
+                        #         }
+                        #     })
 
                         output_file, api_debug_info, completed_parts = self.api.generate_full_audio(
                             script_parts,
@@ -364,18 +364,18 @@ class ElevenLabsServer:
                         job.completed_parts = completed_parts
                         await self.db.update_job(job)
 
-                        # Send completion notification
-                        if hasattr(self.server, 'session'):
-                            await self.server.session.send_notification({
-                                "method": "notifications/progress",
-                                "params": {
-                                    "progressToken": str(job.id),
-                                    "progress": {
-                                        "kind": "end",
-                                        "message": "Audio generation completed"
-                                    }
-                                }
-                            })
+                        # # Send completion notification
+                        # if hasattr(self.server, 'session'):
+                        #     await self.server.session.send_notification({
+                        #         "method": "notifications/progress",
+                        #         "params": {
+                        #             "progressToken": str(job.id),
+                        #             "progress": {
+                        #                 "kind": "end",
+                        #                 "message": "Audio generation completed"
+                        #             }
+                        #         }
+                        #     })
                     except Exception as e:
                         job.status = "failed"
                         job.error = str(e)
