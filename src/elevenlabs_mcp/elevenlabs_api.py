@@ -4,9 +4,18 @@ import time
 import requests
 from pathlib import Path
 from typing import Dict, List, Optional, TypedDict
+from dotenv import load_dotenv
+
+load_dotenv()
+
+log_level = os.getenv("ELEVENLABS_LOG_LEVEL", "ERROR").upper()
+valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+if log_level not in valid_levels:
+    log_level = "ERROR"
+    print(f"Invalid log level {log_level}. Using ERROR. Valid levels are: {', '.join(valid_levels)}")
 
 logging.basicConfig(
-    level=logging.CRITICAL,
+    level=getattr(logging, log_level),
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -21,10 +30,7 @@ class VoiceData(TypedDict):
 from pydub import AudioSegment
 import io
 from datetime import datetime
-from dotenv import load_dotenv
 from tenacity import retry, stop_after_attempt, wait_exponential
-
-load_dotenv()
 
 class ElevenLabsAPI:
     # Add model list as class constant

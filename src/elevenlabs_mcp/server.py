@@ -19,8 +19,14 @@ from .models import AudioJob
 
 load_dotenv()
 
+log_level = os.getenv("ELEVENLABS_LOG_LEVEL", "ERROR").upper()
+valid_levels = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+if log_level not in valid_levels:
+    log_level = "ERROR"
+    print(f"Invalid log level {log_level}. Using ERROR. Valid levels are: {', '.join(valid_levels)}")
+
 logging.basicConfig(
-    level=logging.CRITICAL,
+    level=getattr(logging, log_level),
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
