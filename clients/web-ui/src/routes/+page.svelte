@@ -6,6 +6,7 @@
     import { onMount } from 'svelte';
 
     let text = '';
+    let voiceDetailsExpanded = false;
     let voiceId = 'dQn9HIMKSXWzKBGkbhfP'; // Default to Atom-Pro
     let loading = false;
     let result: AudioGenerationResponse | null = null;
@@ -111,7 +112,16 @@
     {#if getSelectedVoice()}
         {@const voice = getSelectedVoice()}
         <div class="voice-details">
-            <h3>Selected Voice Details</h3>
+            <button 
+                type="button" 
+                class="toggle-details"
+                on:click={() => voiceDetailsExpanded = !voiceDetailsExpanded}
+                aria-expanded={voiceDetailsExpanded}
+            >
+                <h3>Selected Voice Details</h3>
+                <span class="toggle-icon">{voiceDetailsExpanded ? '−' : '+'}</span>
+            </button>
+            {#if voiceDetailsExpanded}
             <div class="voice-info">
                 <div class="info-group">
                     <span class="label">Name:</span>
@@ -139,6 +149,7 @@
                     </div>
                 {/if}
             </div>
+            {/if}
         </div>
     {/if}
 
@@ -270,10 +281,33 @@
         box-shadow: var(--shadow-base);
     }
 
-    .voice-details h3 {
-        font-size: var(--font-size-lg);
-        margin-bottom: var(--spacing-4);
+    .toggle-details {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 0;
+        margin-bottom: var(--spacing-3);
+        cursor: pointer;
         color: var(--color-text);
+    }
+
+    .toggle-details:hover {
+        opacity: 0.8;
+    }
+
+    .toggle-details h3 {
+        font-size: var(--font-size-lg);
+        margin: 0;
+        color: inherit;
+    }
+
+    .toggle-icon {
+        font-size: var(--font-size-lg);
+        font-weight: bold;
+        color: var(--color-text-light);
     }
 
     .voice-info {
