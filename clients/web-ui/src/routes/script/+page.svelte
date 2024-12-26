@@ -31,7 +31,9 @@
     function getSelectedVoice(voiceId: string) {
         return voices.find(v => v.voice_id === voiceId);
     }
-
+    
+    $: isFormInvalid = scriptParts.every(part => !part.text || !part.voice_id);
+    
     async function generateAudio() {
         if (scriptParts.length === 0 || scriptParts.every(part => !part.text)) return;
         
@@ -111,7 +113,7 @@
                         >
                             {#each voices as voice}
                                 <option value={voice.voice_id}>
-                                    {voice.name}
+                                    {voice.name} ({voice.category})
                                 </option>
                             {/each}
                         </select>
@@ -188,7 +190,7 @@
             <button 
                 type="submit" 
                 class="primary-button"
-                disabled={loading || scriptParts.every(part => !part.text)}
+                disabled={loading || isFormInvalid}
             >
                 {#if loading}
                     <LoadingSpinner size={16} />

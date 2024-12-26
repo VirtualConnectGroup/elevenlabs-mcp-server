@@ -27,7 +27,7 @@
     function download() {
         const link = document.createElement('a');
         link.href = `data:audio/mpeg;base64,${audioData}`;
-        link.download = `${name}.mp3`;
+        link.download = `${name}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
