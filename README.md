@@ -39,6 +39,7 @@ Add the following configuration to your MCP settings file (e.g., `cline_mcp_sett
     }
   }
 }
+```
 
 ### Development Installation
 
@@ -72,6 +73,7 @@ Add the following configuration to your MCP settings file (e.g., `cline_mcp_sett
     }
   }
 }
+```
 
 ## Using the Sample SvelteKit MCP Client
 
