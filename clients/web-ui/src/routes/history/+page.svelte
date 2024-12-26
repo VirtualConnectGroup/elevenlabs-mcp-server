@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import type { JobHistory } from '$lib/client';
 
   let jobs: JobHistory[] = [];
+  let currentlyPlaying: string | null = null;
+  let audioElement: HTMLAudioElement | null = null;
   let loading = true;
   let error: string | null = null;
   let expandedJobId: string | null = null;
@@ -68,6 +70,40 @@
   function getChevronClass(jobId: string) {
     return expandedJobId === jobId ? 'rotate-180' : '';
   }
+
+  function handlePlay(jobId: string, event: Event) {
+    event.stopPropagation();
+    
+    if (!audioElement) {
+      audioElement = new Audio();
+      audioElement.addEventListener('ended', () => {
+        currentlyPlaying = null;
+      });
+    }
+
+    if (currentlyPlaying === jobId) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      currentlyPlaying = null;
+    } else {
+      if (currentlyPlaying) {
+        audioElement.pause();
+      }
+      audioElement.src = `/api/download?id=${jobId}`;
+      audioElement.play().catch(err => {
+        console.error('Error playing audio:', err);
+        currentlyPlaying = null;
+      });
+      currentlyPlaying = jobId;
+    }
+  }
+
+  onDestroy(() => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement = null;
+    }
+  });
 
   onMount(() => {
     loadJobs();
@@ -158,6 +194,13 @@
                         Delete
                       </button>
                       {#if job.output_file}
+                        <button
+                          on:click|stopPropagation={(e) => handlePlay(job.id, e)}
+                          class="button button-secondary"
+                          class:playing={currentlyPlaying === job.id}
+                        >
+                          {currentlyPlaying === job.id ? 'Stop' : 'Play'}
+                        </button>
                         <a
                           href={`/api/download?id=${job.id}`}
                           download={`voiceover-${job.id}.mp3`}
@@ -343,6 +386,22 @@
   .button-danger {
     background: var(--color-error);
     color: var(--color-surface);
+  }
+
+  .button-secondary {
+    background: var(--color-secondary, #4a5568);
+    color: var(--color-surface);
+  }
+
+  .button.playing {
+    background: var(--color-text-light);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; }
+    100% { opacity: 1; }
   }
 
   @media (max-width: 640px) {
