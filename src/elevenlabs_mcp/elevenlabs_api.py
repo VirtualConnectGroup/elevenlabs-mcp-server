@@ -69,10 +69,18 @@ class ElevenLabsAPI:
 
     def __init__(self):
         self.api_key = os.getenv("ELEVENLABS_API_KEY")
+        if not self.api_key:
+            logging.error("ELEVENLABS_API_KEY environment variable not set")
+            raise ValueError("ELEVENLABS_API_KEY environment variable not set")
+            
         self.voice_id = os.getenv("ELEVENLABS_VOICE_ID") or "iEw1wkYocsNy7I7pteSN"
         self.model_id = os.getenv("ELEVENLABS_MODEL_ID") or "eleven_multilingual_v2"
+        
+        logging.info(f"Initializing ElevenLabsAPI with model_id: {self.model_id}")
+        
         # Add validation for model_id
         if self.model_id not in self.MODELS:
+            logging.error(f"Invalid model_id: {self.model_id}. Valid models: {list(self.MODELS.keys())}")
             raise ValueError(f"Invalid model_id: {self.model_id}. Must be one of {list(self.MODELS.keys())}")
         self.stability = float(os.getenv("ELEVENLABS_STABILITY", "0.5"))
         self.similarity_boost = float(os.getenv("ELEVENLABS_SIMILARITY_BOOST", "0.75"))
@@ -111,13 +119,20 @@ class ElevenLabsAPI:
             if previous_request_ids:
                 data["previous_request_ids"] = previous_request_ids[-3:]  # Maximum of 3 previous IDs
         
-        response = requests.post(
-            f"{self.base_url}/text-to-speech/{voice_id}",
-            json=data,
-            headers=headers
-        )
+        logging.info(f"Generating audio for text length: {len(text)} chars using voice_id: {voice_id}")
+        logging.debug(f"Generation parameters: stability={self.stability}, similarity_boost={self.similarity_boost}, model={self.model_id}")
         
-        if response.status_code == 200:
+        try:
+            response = requests.post(
+                f"{self.base_url}/text-to-speech/{voice_id}",
+                json=data,
+                headers=headers
+            )
+            
+            logging.debug(f"API response status: {response.status_code}")
+            
+            if response.status_code == 200:
+                logging.info("Audio generation successful")
             if output_file:
                 with open(output_file, 'wb') as f:
                     f.write(response.content)
@@ -125,6 +140,13 @@ class ElevenLabsAPI:
         else:
             debug_info.append(response.text)
             error_message = f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}"
+            logging.error(f"API error response: {response.status_code}")
+            logging.error(f"API error details: {response.text}")
+            logging.error(f"Request data: {data}")
+            raise Exception(error_message)
+        except requests.exceptions.RequestException as e:
+            error_message = f"Network error during API call: {str(e)}"
+            logging.error(error_message)
             raise Exception(error_message)
 
     def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> tuple[str, List[str]]:
@@ -173,6 +195,10 @@ class ElevenLabsAPI:
             next_text = None if is_last else " ".join(all_texts[i + 1:])
             
             try:
+                logging.info(f"Processing part {i+1}/{len(script_parts)}")
+                logging.info(f"Text length: {len(text)} chars")
+                logging.debug(f"Context - Previous text: {'Yes' if previous_text else 'No'}, Next text: {'Yes' if next_text else 'No'}")
+                
                 # Generate audio with context conditioning
                 audio_content, request_id = self.generate_audio_segment(
                     text=text,
