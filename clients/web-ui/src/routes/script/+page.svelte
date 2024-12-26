@@ -128,7 +128,7 @@
                     </div>
                 </div>
 
-                {#if getSelectedVoice(part.voice_id)}
+                {#if part.voice_id && getSelectedVoice(part.voice_id)}
                     {@const voice = getSelectedVoice(part.voice_id)}
                     <div class="voice-details">
                         <button 
@@ -138,21 +138,21 @@
                             aria-expanded={expandedVoiceDetails[i]}
                         >
                             <h4>Voice Details</h4>
-                            <span class="toggle-icon">{expandedVoiceDetails[i] ? '−' : '+'}</span>
+                            <span class="toggle-icon">{expandedVoiceDetails[i] ? '▼' : '▶'}</span>
                         </button>
                         {#if expandedVoiceDetails[i]}
                         <div class="voice-info">
                             <div class="info-group">
                                 <span class="label">Name:</span>
-                                <span>{voice.name}</span>
+                                <span>{voice ? voice.name : 'Unknown Voice'}</span>
                             </div>
-                            {#if voice.description}
+                            {#if voice && voice.description}
                                 <div class="info-group">
                                     <span class="label">Description:</span>
                                     <span>{voice.description}</span>
                                 </div>
                             {/if}
-                            {#if voice.labels}
+                            {#if voice && voice.labels}
                                 <div class="info-group">
                                     <span class="label">Labels:</span>
                                     <span>{Object.entries(voice.labels)
@@ -160,7 +160,7 @@
                                         .join(', ')}</span>
                                 </div>
                             {/if}
-                            {#if voice.preview_url}
+                            {#if voice && voice.preview_url}
                                 <div class="preview-audio">
                                     <span class="label">Preview:</span>
                                     <audio controls src={voice.preview_url}>
