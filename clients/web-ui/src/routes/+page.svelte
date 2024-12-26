@@ -2,12 +2,23 @@
     import AudioPlayer from '$lib/components/AudioPlayer.svelte';
     import DebugInfo from '$lib/components/DebugInfo.svelte';
     import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-    import type { AudioGenerationResponse } from '$lib/elevenlabs/client';
+    import type { AudioGenerationResponse, Voice } from '$lib/elevenlabs-client';
+    import { onMount } from 'svelte';
 
     let text = '';
-    let voiceId = '';
+    let voiceId = 'dQn9HIMKSXWzKBGkbhfP'; // Default to Atom-Pro
     let loading = false;
     let result: AudioGenerationResponse | null = null;
+    let voices: Voice[] = [];
+
+    onMount(async () => {
+        try {
+            const response = await fetch('/api/voices');
+            voices = await response.json();
+        } catch (error) {
+            console.error('Error loading voices:', error);
+        }
+    });
 
     async function generateAudio() {
         if (!text) return;
@@ -45,6 +56,11 @@
             loading = false;
         }
     }
+
+    const formatLabels = (voice: Voice) =>{
+        if (!voice.labels) return 'No labels';
+        return Object.entries(voice.labels).map(([key, value]) => `${key}: ${value}`).join(', ');
+    }
 </script>
 
 <main>
@@ -64,13 +80,18 @@
         </div>
         
         <div class="form-group">
-            <label for="voice">Voice ID (optional)</label>
-            <input
+            <label for="voice">Voice</label>
+            <select
                 id="voice"
-                type="text"
                 bind:value={voiceId}
-                placeholder="Enter voice ID..."
-            />
+                required
+            >
+                {#each voices as voice}
+                    <option value={voice.voice_id}>
+                        {voice.name} ({formatLabels(voice)})
+                    </option>
+                {/each}
+            </select>
         </div>
         
         <button type="submit" disabled={loading || !text}>
@@ -142,7 +163,7 @@
         font-size: var(--font-size-sm);
     }
     
-    textarea, input {
+    textarea, input, select {
         padding: var(--spacing-3);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius-base);
@@ -151,7 +172,7 @@
         transition: all var(--transition-base);
     }
     
-    textarea:focus, input:focus {
+    textarea:focus, input:focus, select:focus {
         outline: none;
         border-color: var(--color-primary);
         box-shadow: var(--shadow-sm);

@@ -27,7 +27,17 @@ export interface JobHistory {
   completed_parts: number;
 }
 
-interface AudioGenerationResponse {
+export interface Voice {
+  voice_id: string;
+  name: string;
+  category?: string;
+  description?: string;
+  labels?: Record<string, string>;
+  preview_Url?: string;
+  is_default?: boolean;
+}
+
+export interface AudioGenerationResponse {
   success: boolean;
   message: string;
   debugInfo: string[];
@@ -42,7 +52,7 @@ interface ScriptInterface {
   script: ScriptPart[];
 }
 
-interface ScriptPart {
+export interface ScriptPart {
   text: string;
   voice_id?: string;
   actor?: string;
@@ -357,6 +367,38 @@ export class ElevenLabsClient {
     } catch (error) {
       console.error("Error deleting job:", error);
       return false;
+    }
+  }
+
+  async getVoices(): Promise<Voice[]> {
+    try {
+      await this.connectionPromise;
+
+      const request: ReadResourceRequest = {
+        method: "resources/read",
+        params: {
+          uri: "voiceover://voices",
+        },
+      };
+
+      const response = await this.client.request(request, ReadResourceResultSchema);
+      
+      for (const content of response.contents) {
+        if (content.mimeType === "text/plain" && typeof content.text === "string") {
+          try {
+            const voices = JSON.parse(content.text);
+            if (Array.isArray(voices)) {
+              return voices as Voice[];
+            }
+          } catch (error) {
+            console.error("Error parsing voices response:", error);
+          }
+        }
+      }
+      return [];
+    } catch (error) {
+      console.error("Error fetching voices:", error);
+      return [];
     }
   }
 

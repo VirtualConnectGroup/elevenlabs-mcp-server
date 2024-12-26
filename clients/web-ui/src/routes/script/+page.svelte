@@ -2,11 +2,22 @@
     import AudioPlayer from '$lib/components/AudioPlayer.svelte';
     import DebugInfo from '$lib/components/DebugInfo.svelte';
     import LoadingSpinner from '$lib/components/LoadingSpinner.svelte';
-    import type { AudioGenerationResponse, ScriptPart } from '$lib/elevenlabs/client';
+    import type { AudioGenerationResponse, ScriptPart, Voice } from '$lib/elevenlabs-client';
+    import { onMount } from 'svelte';
 
-    let scriptParts: ScriptPart[] = [{ text: '', voice_id: '', actor: '' }];
+    let scriptParts: ScriptPart[] = [{ text: '', voice_id: 'dQn9HIMKSXWzKBGkbhfP', actor: '' }];
     let loading = false;
     let result: AudioGenerationResponse | null = null;
+    let voices: Voice[] = [];
+
+    onMount(async () => {
+        try {
+            const response = await fetch('/api/voices');
+            voices = await response.json();
+        } catch (error) {
+            console.error('Error loading voices:', error);
+        }
+    });
 
     function addPart() {
         scriptParts = [...scriptParts, { text: '', voice_id: '', actor: '' }];
@@ -87,13 +98,18 @@
                 
                 <div class="part-details">
                     <div class="form-group">
-                        <label for="voice-{i}">Voice ID</label>
-                        <input
+                        <label for="voice-{i}">Voice</label>
+                        <select
                             id="voice-{i}"
-                            type="text"
                             bind:value={part.voice_id}
-                            placeholder="Enter voice ID..."
-                        />
+                            required
+                        >
+                            {#each voices as voice}
+                                <option value={voice.voice_id}>
+                                    {voice.name}
+                                </option>
+                            {/each}
+                        </select>
                     </div>
                     
                     <div class="form-group">
@@ -232,7 +248,7 @@
         font-size: var(--font-size-sm);
     }
     
-    textarea, input {
+    textarea, input, select {
         padding: var(--spacing-3);
         border: 1px solid var(--border-color);
         border-radius: var(--border-radius-base);
@@ -241,7 +257,7 @@
         transition: all var(--transition-base);
     }
     
-    textarea:focus, input:focus {
+    textarea:focus, input:focus, select:focus {
         outline: none;
         border-color: var(--color-primary);
         box-shadow: var(--shadow-sm);
