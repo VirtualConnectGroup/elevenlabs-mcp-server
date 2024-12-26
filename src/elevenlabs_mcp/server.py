@@ -270,6 +270,29 @@ class ElevenLabsServer:
                         },
                         "required": ["job_id"]
                     }
+                ),
+                types.Tool(
+                    name="list_voices",
+                    description="Get a list of all available ElevenLabs voices with metadata",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {},  # No parameters needed
+                        "required": []
+                    }
+                ),
+                types.Tool(
+                    name="get_voiceover_history",
+                    description="Get voiceover job history. Optionally specify a job ID for a specific job.",
+                    inputSchema={
+                        "type": "object",
+                        "properties": {
+                            "job_id": {
+                                "type": "string",
+                                "description": "Optional job ID to get details for a specific job"
+                            }
+                        },
+                        "required": []
+                    }
                 )
             ]
 
@@ -452,6 +475,64 @@ class ElevenLabsServer:
                         text=f"Successfully deleted job {job_id} and associated files"
                     )]
                 
+                elif name == "list_voices":
+                    try:
+                        # Get voices from cache
+                        voices, needs_refresh = await self.db.get_voices()
+                        
+                        # Refresh cache if needed
+                        if needs_refresh:
+                            try:
+                                fresh_voices = await asyncio.to_thread(self.api.get_voices)
+                                await self.db.upsert_voices(fresh_voices)
+                                voices = fresh_voices
+                            except Exception as e:
+                                logging.error(f"Error refreshing voices: {e}")
+                                # Continue with cached data if refresh fails
+                                if not voices:
+                                    raise  # Re-raise if we have no data at all
+                        
+                        # Ensure default voice is marked
+                        for voice in voices:
+                            voice["is_default"] = voice["voice_id"] == self.api.voice_id
+                        
+                        return [types.TextContent(
+                            type="text",
+                            text=json.dumps(voices, indent=2)
+                        )]
+                    except Exception as e:
+                        return [types.TextContent(
+                            type="text",
+                            text=json.dumps({"error": str(e)}, indent=2)
+                        )]
+
+                elif name == "get_voiceover_history":
+                    try:
+                        job_id = arguments.get("job_id")
+                        if job_id:
+                            job = await self.db.get_job(job_id)
+                            if not job:
+                                return [types.TextContent(
+                                    type="text",
+                                    text=json.dumps({"error": "Job not found"}, indent=2)
+                                )]
+                            jobs = [job]
+                        else:
+                            jobs = await self.db.get_all_jobs()
+
+                        # Convert jobs to JSON
+                        jobs_data = [job.to_dict() for job in jobs]
+                        return [types.TextContent(
+                            type="text",
+                            text=json.dumps(jobs_data, indent=2)
+                        )]
+                        
+                    except Exception as e:
+                        return [types.TextContent(
+                            type="text",
+                            text=json.dumps({"error": str(e)}, indent=2)
+                        )]
+
                 elif name == "get_audio_file":
                     job_id = arguments.get("job_id")
                     if not job_id:
