@@ -61,6 +61,10 @@
         if (!voice.labels) return 'No labels';
         return Object.entries(voice.labels).map(([key, value]) => `${key}: ${value}`).join(', ');
     }
+
+    function getSelectedVoice() {
+        return voices.find(v => v.voice_id === voiceId);
+    }
 </script>
 
 <main>
@@ -104,6 +108,40 @@
         </button>
     </form>
     
+    {#if getSelectedVoice()}
+        {@const voice = getSelectedVoice()}
+        <div class="voice-details">
+            <h3>Selected Voice Details</h3>
+            <div class="voice-info">
+                <div class="info-group">
+                    <span class="label">Name:</span>
+                    <span>{voice.name}</span>
+                </div>
+                {#if voice.description}
+                    <div class="info-group">
+                        <span class="label">Description:</span>
+                        <span>{voice.description}</span>
+                    </div>
+                {/if}
+                {#if voice.labels}
+                    <div class="info-group">
+                        <span class="label">Labels:</span>
+                        <span>{formatLabels(voice)}</span>
+                    </div>
+                {/if}
+                {#if voice.preview_url}
+                    <div class="preview-audio">
+                        <span class="label">Preview:</span>
+                        <audio controls src={voice.preview_url}>
+                            <track kind="captions">
+                            Your browser does not support the audio element.
+                        </audio>
+                    </div>
+                {/if}
+            </div>
+        </div>
+    {/if}
+
     {#if result}
         <div class="result">
             {#if result.success && result.audioData}
@@ -224,6 +262,50 @@
         margin-bottom: var(--spacing-4);
     }
 
+    .voice-details {
+        margin-top: var(--spacing-8);
+        background: var(--color-surface);
+        padding: var(--spacing-6);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-base);
+    }
+
+    .voice-details h3 {
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--spacing-4);
+        color: var(--color-text);
+    }
+
+    .voice-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-3);
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+
+    .preview-audio {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
+        margin-top: var(--spacing-2);
+    }
+
+    .preview-audio audio {
+        width: 100%;
+        margin-top: var(--spacing-1);
+    }
+
+    .label {
+        font-weight: 500;
+        color: var(--color-text-light);
+        font-size: var(--font-size-sm);
+    }
+
     @media (max-width: 640px) {
         main {
             padding: var(--spacing-4);
@@ -246,6 +328,16 @@
 
         .result {
             padding: var(--spacing-4);
+        }
+
+        .voice-details {
+            padding: var(--spacing-4);
+            margin-top: var(--spacing-6);
+        }
+
+        .voice-details h3 {
+            font-size: var(--font-size-base);
+            margin-bottom: var(--spacing-3);
         }
     }
 </style>
