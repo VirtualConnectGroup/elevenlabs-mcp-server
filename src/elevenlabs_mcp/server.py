@@ -37,6 +37,7 @@ class ElevenLabsServer:
         # Set up handlers
         self.setup_tools()
         self.setup_resources()
+        self.setup_notifications()
     
     async def initialize(self):
         """Initialize server components."""
@@ -333,6 +334,19 @@ class ElevenLabsServer:
                         job.status = "processing"
                         await self.db.update_job(job)
 
+                        # Send progress notification
+                        if hasattr(self.server, 'session'):
+                            await self.server.session.send_notification({
+                                "method": "notifications/progress",
+                                "params": {
+                                    "progressToken": str(job.id),
+                                    "progress": {
+                                        "kind": "begin",
+                                        "message": "Starting audio generation"
+                                    }
+                                }
+                            })
+
                         output_file, api_debug_info = self.api.generate_full_audio(
                             script_parts,
                             self.output_dir
@@ -343,6 +357,19 @@ class ElevenLabsServer:
                         job.output_file = str(output_file)
                         job.completed_parts = 1
                         await self.db.update_job(job)
+
+                        # Send completion notification
+                        if hasattr(self.server, 'session'):
+                            await self.server.session.send_notification({
+                                "method": "notifications/progress",
+                                "params": {
+                                    "progressToken": str(job.id),
+                                    "progress": {
+                                        "kind": "end",
+                                        "message": "Audio generation completed"
+                                    }
+                                }
+                            })
                     except Exception as e:
                         job.status = "failed"
                         job.error = str(e)
@@ -594,6 +621,27 @@ class ElevenLabsServer:
                     type="text",
                     text=error_msg
                 )]
+
+    def setup_notifications(self):
+        """Set up notification handlers"""
+        @self.server.progress_notification()
+        async def handle_cancelled(params: dict):
+            request_id = params.get("requestId")
+            reason = params.get("reason", "Unknown reason")
+            logging.info(f"Received cancellation for request {request_id}: {reason}")
+            
+            # Send proper cancellation notification
+            if hasattr(self.server, 'session'):
+                await self.server.session.send_notification({
+                    "method": "notifications/progress",
+                    "params": {
+                        "progressToken": str(request_id),
+                        "progress": {
+                            "kind": "cancelled",
+                            "message": f"Request cancelled: {reason}"
+                        }
+                    }
+                })
 
     async def run(self):
         """Run the server"""
