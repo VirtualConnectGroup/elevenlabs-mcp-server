@@ -133,17 +133,17 @@ class ElevenLabsAPI:
             
             if response.status_code == 200:
                 logging.info("Audio generation successful")
-            if output_file:
-                with open(output_file, 'wb') as f:
-                    f.write(response.content)
-            return response.content, response.headers["request-id"]
-        else:
-            debug_info.append(response.text)
-            error_message = f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}"
-            logging.error(f"API error response: {response.status_code}")
-            logging.error(f"API error details: {response.text}")
-            logging.error(f"Request data: {data}")
-            raise Exception(error_message)
+                if output_file:
+                    with open(output_file, 'wb') as f:
+                        f.write(response.content)
+                return response.content, response.headers["request-id"]
+            else:
+                debug_info.append(response.text)
+                error_message = f"Failed to generate audio: {response.text} \n\n{debug_info} \n\n{data}"
+                logging.error(f"API error response: {response.status_code}")
+                logging.error(f"API error details: {response.text}")
+                logging.error(f"Request data: {data}")
+                raise Exception(error_message)
         except requests.exceptions.RequestException as e:
             error_message = f"Network error during API call: {str(e)}"
             logging.error(error_message)
