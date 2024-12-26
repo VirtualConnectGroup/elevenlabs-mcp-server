@@ -1,6 +1,6 @@
 [project]
 name = "elevenlabs-mcp-server"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Model Context Protocol server providing ElevenLabs text-to-speech integration"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-elevenlabs-mcp = "elevenlabs_mcp.server:main"
+elevenlabs-mcp-server = "elevenlabs_mcp.server:main"
 
 [build-system]
 requires = ["hatchling"]
