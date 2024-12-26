@@ -119,7 +119,7 @@
                 aria-expanded={voiceDetailsExpanded}
             >
                 <h3>Selected Voice Details</h3>
-                <span class="toggle-icon">{voiceDetailsExpanded ? '−' : '+'}</span>
+                <span class="toggle-icon">{voiceDetailsExpanded ? '▼' : '▶'}</span>
             </button>
             {#if voiceDetailsExpanded}
             <div class="voice-info">
@@ -294,9 +294,6 @@
         color: var(--color-text);
     }
 
-    .toggle-details:hover {
-        opacity: 0.8;
-    }
 
     .toggle-details h3 {
         font-size: var(--font-size-lg);
