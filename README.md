@@ -1,52 +1,23 @@
 # ElevenLabs MCP Server
 
-A Model Context Protocol (MCP) server that integrates with ElevenLabs text-to-speech API, featuring both a server component and web-based UI for managing voice generation tasks.
+A Model Context Protocol (MCP) server that integrates with ElevenLabs text-to-speech API, featuring both a server component and a sample web-based MCP Client (SvelteKit) for managing voice generation tasks.
 
 ## Features
 
 - Generate audio from text using ElevenLabs API
 - Support for multiple voices and script parts
-- Web-based UI for:
+- SQLite database for persistent history storage
+- Sample SvelteKit MCP Client for:
   - Simple text-to-speech conversion
   - Multi-part script management
   - Voice history tracking and playback
   - Audio file downloads
-- SQLite database for persistent history storage
-- REST API endpoints for voice generation and management
 
 ## Installation
 
 ### Using uvx (recommended)
 
-When using [`uvx`](https://docs.astral.sh/uv/guides/tools/), no specific installation is needed:
-
-```bash
-uvx elevenlabs-mcp-server
-```
-
-### Development Installation
-
-1. Clone this repository
-2. Install dependencies:
-   ```bash
-   uv venv
-   uv pip install -e .
-   ```
-3. Copy `.env.example` to `.env` and fill in your ElevenLabs credentials
-
-## Web UI Installation
-
-1. Navigate to the web UI directory:
-   ```bash
-   cd clients/web-ui
-   ```
-2. Install dependencies:
-   ```bash
-   pnpm install
-   ```
-3. Copy `.env.example` to `.env` and configure as needed
-
-## MCP Settings Configuration
+When using [`uvx`](https://docs.astral.sh/uv/guides/tools/), no specific installation is needed.
 
 Add the following configuration to your MCP settings file (e.g., `cline_mcp_settings.json` for Claude Desktop):
 
@@ -59,49 +30,79 @@ Add the following configuration to your MCP settings file (e.g., `cline_mcp_sett
       "env": {
         "ELEVENLABS_API_KEY": "your-api-key",
         "ELEVENLABS_VOICE_ID": "your-voice-id",
-        "ELEVENLABS_MODEL_ID": "eleven_flash_v2"
+        "ELEVENLABS_MODEL_ID": "eleven_flash_v2",
+        "ELEVENLABS_STABILITY": "0.5",
+        "ELEVENLABS_SIMILARITY_BOOST": "0.75",
+        "ELEVENLABS_STYLE": "0.1",
+        "ELEVENLABS_OUTPUT_DIR": "output"
       }
     }
   }
 }
-```
 
-## Usage
+### Development Installation
 
-### Starting the Server
-
-1. Start the MCP server:
+1. Clone this repository
+2. Install dependencies:
    ```bash
-   uvx elevenlabs-mcp-server
+   uv venv
    ```
+3. Copy `.env.example` to `.env` and fill in your ElevenLabs credentials
 
-2. Use with any MCP client (e.g., Claude Desktop)
+```json
+{
+  "mcpServers": {
+    "elevenlabs": {
+      "command": "uv",
+      "args": [
+        "--directory",
+        "path/to/elevenlabs-mcp-server",
+        "run",
+        "elevenlabs-mcp-server"
+      ],
+      "env": {
+        "ELEVENLABS_API_KEY": "your-api-key",
+        "ELEVENLABS_VOICE_ID": "your-voice-id",
+        "ELEVENLABS_MODEL_ID": "eleven_flash_v2",
+        "ELEVENLABS_STABILITY": "0.5",
+        "ELEVENLABS_SIMILARITY_BOOST": "0.75",
+        "ELEVENLABS_STYLE": "0.1",
+        "ELEVENLABS_OUTPUT_DIR": "output"
+      }
+    }
+  }
+}
 
-### Running the Web UI
+## Using the Sample SvelteKit MCP Client
 
-1. Start the web UI development server:
+1. Navigate to the web UI directory:
    ```bash
    cd clients/web-ui
+   ```
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+3. Copy `.env.example` to `.env` and configure as needed
+4. Run the web UI:
+   ```bash
    pnpm dev
    ```
-2. Open http://localhost:5173 in your browser
+5. Open http://localhost:5174 in your browser
 
 ### Available Tools
 
 - `generate_audio_simple`: Generate audio from plain text using default voice settings
 - `generate_audio_script`: Generate audio from a structured script with multiple voices and actors
+- `delete_job`: Delete a job by its ID
+- `get_audio_file`: Get the audio file by its ID
+- `list_voices`: List all available voices
+- `get_voiceover_history`: Get voiceover job history. Optionally specify a job ID for a specific job.
 
-## Development
+### Available Resources
 
-Install development dependencies:
-```bash
-uv pip install -e ".[dev]"
-```
-
-Run tests:
-```bash
-pytest
-```
+- `voiceover://history/{job_id}`: Get the audio file by its ID
+- `voiceover://voices`: List all available voices
 
 ## License
 
