@@ -6,6 +6,7 @@
     import { onMount } from 'svelte';
 
     let scriptParts: ScriptPart[] = [{ text: '', voice_id: 'dQn9HIMKSXWzKBGkbhfP', actor: '' }];
+    let expandedVoiceDetails: { [key: number]: boolean } = {};
     let loading = false;
     let result: AudioGenerationResponse | null = null;
     let voices: Voice[] = [];
@@ -130,7 +131,16 @@
                 {#if getSelectedVoice(part.voice_id)}
                     {@const voice = getSelectedVoice(part.voice_id)}
                     <div class="voice-details">
-                        <h4>Voice Details</h4>
+                        <button 
+                            type="button" 
+                            class="toggle-details"
+                            on:click={() => expandedVoiceDetails[i] = !expandedVoiceDetails[i]}
+                            aria-expanded={expandedVoiceDetails[i]}
+                        >
+                            <h4>Voice Details</h4>
+                            <span class="toggle-icon">{expandedVoiceDetails[i] ? '−' : '+'}</span>
+                        </button>
+                        {#if expandedVoiceDetails[i]}
                         <div class="voice-info">
                             <div class="info-group">
                                 <span class="label">Name:</span>
@@ -160,6 +170,7 @@
                                 </div>
                             {/if}
                         </div>
+                        {/if}
                     </div>
                 {/if}
             </div>
@@ -284,10 +295,33 @@
         border: 1px solid var(--border-color);
     }
 
-    .voice-details h4 {
-        font-size: var(--font-size-base);
+    .toggle-details {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: none;
+        border: none;
+        padding: 0;
         margin-bottom: var(--spacing-3);
+        cursor: pointer;
         color: var(--color-text);
+    }
+
+    .toggle-details:hover {
+        opacity: 0.8;
+    }
+
+    .toggle-details h4 {
+        font-size: var(--font-size-base);
+        margin: 0;
+        color: inherit;
+    }
+
+    .toggle-icon {
+        font-size: var(--font-size-lg);
+        font-weight: bold;
+        color: var(--color-text-light);
     }
 
     .voice-info {
