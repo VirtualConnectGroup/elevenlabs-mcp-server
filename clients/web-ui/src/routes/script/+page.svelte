@@ -27,6 +27,10 @@
         scriptParts = scriptParts.filter((_, i) => i !== index);
     }
 
+    function getSelectedVoice(voiceId: string) {
+        return voices.find(v => v.voice_id === voiceId);
+    }
+
     async function generateAudio() {
         if (scriptParts.length === 0 || scriptParts.every(part => !part.text)) return;
         
@@ -122,6 +126,42 @@
                         />
                     </div>
                 </div>
+
+                {#if getSelectedVoice(part.voice_id)}
+                    {@const voice = getSelectedVoice(part.voice_id)}
+                    <div class="voice-details">
+                        <h4>Voice Details</h4>
+                        <div class="voice-info">
+                            <div class="info-group">
+                                <span class="label">Name:</span>
+                                <span>{voice.name}</span>
+                            </div>
+                            {#if voice.description}
+                                <div class="info-group">
+                                    <span class="label">Description:</span>
+                                    <span>{voice.description}</span>
+                                </div>
+                            {/if}
+                            {#if voice.labels}
+                                <div class="info-group">
+                                    <span class="label">Labels:</span>
+                                    <span>{Object.entries(voice.labels)
+                                        .map(([key, value]) => `${key}: ${value}`)
+                                        .join(', ')}</span>
+                                </div>
+                            {/if}
+                            {#if voice.preview_url}
+                                <div class="preview-audio">
+                                    <span class="label">Preview:</span>
+                                    <audio controls src={voice.preview_url}>
+                                        <track kind="captions">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                            {/if}
+                        </div>
+                    </div>
+                {/if}
             </div>
         {/each}
         
@@ -235,6 +275,50 @@
         gap: var(--spacing-2);
         margin-bottom: var(--spacing-4);
     }
+
+    .voice-details {
+        margin-top: var(--spacing-4);
+        background: var(--color-surface-light);
+        padding: var(--spacing-4);
+        border-radius: var(--border-radius-base);
+        border: 1px solid var(--border-color);
+    }
+
+    .voice-details h4 {
+        font-size: var(--font-size-base);
+        margin-bottom: var(--spacing-3);
+        color: var(--color-text);
+    }
+
+    .voice-info {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-3);
+    }
+
+    .info-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-1);
+    }
+
+    .preview-audio {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-2);
+        margin-top: var(--spacing-2);
+    }
+
+    .preview-audio audio {
+        width: 100%;
+        margin-top: var(--spacing-1);
+    }
+
+    .label {
+        font-weight: 500;
+        color: var(--color-text-light);
+        font-size: var(--font-size-sm);
+    }
     
     .part-details {
         display: grid;
@@ -335,6 +419,20 @@
     @media (max-width: 640px) {
         main {
             padding: var(--spacing-4);
+        }
+
+        .voice-details {
+            padding: var(--spacing-3);
+            margin-top: var(--spacing-3);
+        }
+
+        .voice-details h4 {
+            font-size: var(--font-size-sm);
+            margin-bottom: var(--spacing-2);
+        }
+
+        .info-group {
+            font-size: var(--font-size-sm);
         }
 
         h2 {
