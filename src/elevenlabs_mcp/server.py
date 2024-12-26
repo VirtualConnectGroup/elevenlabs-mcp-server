@@ -20,7 +20,7 @@ from .models import AudioJob
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.CRITICAL,
+    level=logging.DEBUG,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
@@ -389,7 +389,7 @@ class ElevenLabsServer:
                         id=job_id,
                         status="pending",
                         script_parts=script_parts,
-                        total_parts=1
+                        total_parts=len(script_parts)
                     )
                     await self.db.insert_job(job)
                     debug_info.append(f"Created job record: {job_id}")
