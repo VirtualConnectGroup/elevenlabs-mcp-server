@@ -250,7 +250,7 @@
         transform: none;
     }
     
-    button:not(:disabled):hover {
+    button:not(:disabled):not(.toggle-details):hover {
         background: var(--color-primary-dark);
         transform: translateY(-1px);
         box-shadow: var(--shadow-base);
