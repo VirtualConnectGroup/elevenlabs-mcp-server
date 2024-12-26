@@ -347,7 +347,7 @@ class ElevenLabsServer:
                                 }
                             })
 
-                        output_file, api_debug_info = self.api.generate_full_audio(
+                        output_file, api_debug_info, completed_parts = self.api.generate_full_audio(
                             script_parts,
                             self.output_dir
                         )
@@ -355,7 +355,7 @@ class ElevenLabsServer:
 
                         job.status = "completed"
                         job.output_file = str(output_file)
-                        job.completed_parts = 1
+                        job.completed_parts = completed_parts
                         await self.db.update_job(job)
 
                         # Send completion notification
@@ -425,7 +425,7 @@ class ElevenLabsServer:
                         job.status = "processing"
                         await self.db.update_job(job)
 
-                        output_file, api_debug_info = self.api.generate_full_audio(
+                        output_file, api_debug_info, completed_parts = self.api.generate_full_audio(
                             script_parts,
                             self.output_dir
                         )
@@ -433,7 +433,7 @@ class ElevenLabsServer:
 
                         job.status = "completed"
                         job.output_file = str(output_file)
-                        job.completed_parts = 1
+                        job.completed_parts = completed_parts
                         await self.db.update_job(job)
                     except Exception as e:
                         job.status = "failed"

@@ -149,8 +149,8 @@ class ElevenLabsAPI:
             logging.error(error_message)
             raise Exception(error_message)
 
-    def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> tuple[str, List[str]]:
-        """Generate audio for multiple parts using request stitching. Returns tuple of (output_file_path, debug_info)"""
+    def generate_full_audio(self, script_parts: List[Dict], output_dir: Path) -> tuple[str, List[str], int]:
+        """Generate audio for multiple parts using request stitching. Returns tuple of (output_file_path, debug_info, completed_parts)"""
         # Create output directory if it doesn't exist
         output_dir.mkdir(exist_ok=True)
         
@@ -166,6 +166,7 @@ class ElevenLabsAPI:
         segments = []
         previous_request_ids = []
         failed_parts = []
+        completed_parts = 0
         
         debug_info.append("Processing all_texts")
         all_texts = []
@@ -210,6 +211,7 @@ class ElevenLabsAPI:
                 )
                 
                 debug_info.append(f"Successfully generated audio for part {i}")
+                completed_parts += 1
                 
                 # Add request ID to history
                 previous_request_ids.append(request_id)
@@ -243,7 +245,7 @@ class ElevenLabsAPI:
             debug_info.append(f"Model: {self.model_id}")
             logging.debug(f"Model: {self.model_id}")
             
-            return str(output_file), debug_info
+            return str(output_file), debug_info, completed_parts
         else:
             error_msg = "\n".join([
                 "No audio segments were generated. Debug info:",
