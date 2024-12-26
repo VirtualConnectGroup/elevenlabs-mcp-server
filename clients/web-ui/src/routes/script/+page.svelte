@@ -32,7 +32,7 @@
         return voices.find(v => v.voice_id === voiceId);
     }
     
-    $: isFormInvalid = scriptParts.every(part => !part.text || !part.voice_id);
+    $: isFormInvalid = scriptParts.length === 0 || scriptParts.some(part => !part.text || !part.voice_id);
     
     async function generateAudio() {
         if (scriptParts.length === 0 || scriptParts.every(part => !part.text)) return;
