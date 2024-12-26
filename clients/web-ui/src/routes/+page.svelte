@@ -92,7 +92,7 @@
             >
                 {#each voices as voice}
                     <option value={voice.voice_id}>
-                        {voice.name} ({formatLabels(voice)})
+                        {voice.name} ({voice.category})
                     </option>
                 {/each}
             </select>
@@ -115,21 +115,21 @@
             <div class="voice-info">
                 <div class="info-group">
                     <span class="label">Name:</span>
-                    <span>{voice.name}</span>
+                    <span>{voice ? voice.name : 'Unknown'}</span>
                 </div>
-                {#if voice.description}
+                {#if voice && voice.description}
                     <div class="info-group">
                         <span class="label">Description:</span>
                         <span>{voice.description}</span>
                     </div>
                 {/if}
-                {#if voice.labels}
+                {#if voice && voice.labels}
                     <div class="info-group">
                         <span class="label">Labels:</span>
                         <span>{formatLabels(voice)}</span>
                     </div>
                 {/if}
-                {#if voice.preview_url}
+                {#if voice && voice.preview_url}
                     <div class="preview-audio">
                         <span class="label">Preview:</span>
                         <audio controls src={voice.preview_url}>

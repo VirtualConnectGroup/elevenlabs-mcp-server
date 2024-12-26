@@ -33,7 +33,7 @@ export interface Voice {
   category?: string;
   description?: string;
   labels?: Record<string, string>;
-  preview_Url?: string;
+  preview_url?: string;
   is_default?: boolean;
 }
 
