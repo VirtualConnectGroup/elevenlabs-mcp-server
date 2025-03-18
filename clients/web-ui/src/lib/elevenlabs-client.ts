@@ -1,9 +1,6 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
-import {
-  CallToolResultSchema,
-  ReadResourceResultSchema,
-} from "@modelcontextprotocol/sdk/types.js";
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { CallToolResultSchema, ReadResourceResultSchema } from '@modelcontextprotocol/sdk/types.js';
 import type {
   TextContent,
   EmbeddedResource,
@@ -13,11 +10,11 @@ import type {
   TextResourceContents,
   ReadResourceRequest,
   ReadResourceResult,
-} from "@modelcontextprotocol/sdk/types.js";
+} from '@modelcontextprotocol/sdk/types.js';
 
 export interface JobHistory {
   id: string;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: 'pending' | 'processing' | 'completed' | 'failed';
   script_parts: ScriptPart[];
   output_file?: string;
   error?: string;
@@ -68,12 +65,12 @@ export class ElevenLabsClient {
       args,
     });
 
-    console.log("command:", command, "args:", args);
+    console.log('command:', command, 'args:', args);
 
     this.client = new Client(
       {
-        name: "elevenlabs-client",
-        version: "0.1.0",
+        name: 'elevenlabs-client',
+        version: '0.1.0',
       },
       {
         capabilities: {},
@@ -83,50 +80,44 @@ export class ElevenLabsClient {
     // Initialize connection promise
     this.connectionPromise = this.client.connect(transport);
     this.connectionPromise.catch((error: Error) => {
-      console.error("Failed to connect:", error);
+      console.error('Failed to connect:', error);
     });
   }
 
   private parseHistoryResponse(response: ReadResourceResult): JobHistory[] {
-    console.log("Raw history response:", response);
+    console.log('Raw history response:', response);
 
     for (const content of response.contents) {
-      if (
-        content.mimeType === "text/plain" &&
-        typeof content.text === "string"
-      ) {
+      if (content.mimeType === 'text/plain' && typeof content.text === 'string') {
         try {
           // Clean up the text content by removing any leading/trailing whitespace and quotes
-          const cleanText = content.text.trim().replace(/^['"]|['"]$/g, "");
+          const cleanText = content.text.trim().replace(/^['"]|['"]$/g, '');
           const parsed = JSON.parse(cleanText);
           if (Array.isArray(parsed)) {
             return parsed as JobHistory[];
-          } else if (typeof parsed === "object" && parsed !== null) {
+          } else if (typeof parsed === 'object' && parsed !== null) {
             // If we got a single job object, wrap it in an array
             return [parsed as JobHistory];
           }
         } catch (error) {
-          console.error("Error parsing history response:", error);
+          console.error('Error parsing history response:', error);
           // Try to parse as a string concatenation
           try {
             const concatenatedJson = content.text
-              .split("\n")
-              .map((line) => line.trim())
-              .join("")
-              .replace(/^['"]|['"]$/g, "")
-              .replace(/\s*\+\s*/g, "");
-            console.log(
-              "Attempting to parse concatenated JSON:",
-              concatenatedJson
-            );
+              .split('\n')
+              .map(line => line.trim())
+              .join('')
+              .replace(/^['"]|['"]$/g, '')
+              .replace(/\s*\+\s*/g, '');
+            console.log('Attempting to parse concatenated JSON:', concatenatedJson);
             const parsed = JSON.parse(concatenatedJson);
             if (Array.isArray(parsed)) {
               return parsed as JobHistory[];
-            } else if (typeof parsed === "object" && parsed !== null) {
+            } else if (typeof parsed === 'object' && parsed !== null) {
               return [parsed as JobHistory];
             }
           } catch (innerError) {
-            console.error("Error parsing concatenated JSON:", innerError);
+            console.error('Error parsing concatenated JSON:', innerError);
           }
         }
       }
@@ -137,29 +128,26 @@ export class ElevenLabsClient {
   private parseToolResponse(response: CallToolResult): AudioGenerationResponse {
     const result: AudioGenerationResponse = {
       success: false,
-      message: "",
+      message: '',
       debugInfo: [],
     };
 
     if (response.content) {
       for (const content of response.content) {
-        if (content.type === "text") {
+        if (content.type === 'text') {
           // Split the text content into lines
-          const lines = content.text.split("\n");
+          const lines = content.text.split('\n');
           // First line is the status message
           result.message = lines[0];
           // Rest are debug info (skip the "Debug info:" line)
           result.debugInfo = lines.slice(2);
           // Check if the message indicates success
-          result.success = result.message.includes("successful");
-        } else if (content.type === "resource") {
+          result.success = result.message.includes('successful');
+        } else if (content.type === 'resource') {
           const resource = content.resource as BlobResourceContents;
           result.audioData = {
             uri: resource.uri,
-            name:
-              (resource.name as string) ||
-              resource.uri.split("/").pop() ||
-              "audio",
+            name: (resource.name as string) || resource.uri.split('/').pop() || 'audio',
             data: resource.blob,
           };
         }
@@ -169,18 +157,15 @@ export class ElevenLabsClient {
     return result;
   }
 
-  async generateSimpleAudio(
-    text: string,
-    voice_id?: string
-  ): Promise<AudioGenerationResponse> {
+  async generateSimpleAudio(text: string, voice_id?: string): Promise<AudioGenerationResponse> {
     try {
       // Wait for connection before making request
       await this.connectionPromise;
 
       const request: CallToolRequest = {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "generate_audio_simple",
+          name: 'generate_audio_simple',
           arguments: {
             text,
             voice_id,
@@ -191,8 +176,7 @@ export class ElevenLabsClient {
       const response = await this.client.request(request, CallToolResultSchema);
       return this.parseToolResponse(response);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
         message: `Error generating audio: ${errorMessage}`,
@@ -201,20 +185,17 @@ export class ElevenLabsClient {
     }
   }
 
-  async generateScriptAudio(
-    script: string | ScriptInterface
-  ): Promise<AudioGenerationResponse> {
+  async generateScriptAudio(script: string | ScriptInterface): Promise<AudioGenerationResponse> {
     try {
       // Wait for connection before making request
       await this.connectionPromise;
 
-      const scriptJson =
-        typeof script === "string" ? script : JSON.stringify(script);
+      const scriptJson = typeof script === 'string' ? script : JSON.stringify(script);
 
       const request: CallToolRequest = {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "generate_audio_script",
+          name: 'generate_audio_script',
           arguments: {
             script: scriptJson,
           },
@@ -224,8 +205,7 @@ export class ElevenLabsClient {
       const response = await this.client.request(request, CallToolResultSchema);
       return this.parseToolResponse(response);
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         success: false,
         message: `Error generating audio: ${errorMessage}`,
@@ -239,19 +219,16 @@ export class ElevenLabsClient {
       await this.connectionPromise;
 
       const request: ReadResourceRequest = {
-        method: "resources/read",
+        method: 'resources/read',
         params: {
-          uri: "voiceover://history",
+          uri: 'voiceover://history',
         },
       };
 
-      const response = await this.client.request(
-        request,
-        ReadResourceResultSchema
-      );
+      const response = await this.client.request(request, ReadResourceResultSchema);
       return this.parseHistoryResponse(response);
     } catch (error) {
-      console.error("Error fetching job history:", error);
+      console.error('Error fetching job history:', error);
       return [];
     }
   }
@@ -261,20 +238,17 @@ export class ElevenLabsClient {
       await this.connectionPromise;
 
       const request: ReadResourceRequest = {
-        method: "resources/read",
+        method: 'resources/read',
         params: {
           uri: `voiceover://history/${jobId}`,
         },
       };
 
-      const response = await this.client.request(
-        request,
-        ReadResourceResultSchema
-      );
+      const response = await this.client.request(request, ReadResourceResultSchema);
       const jobs = this.parseHistoryResponse(response);
       return jobs.length > 0 ? jobs[0] : null;
     } catch (error) {
-      console.error("Error fetching job:", error);
+      console.error('Error fetching job:', error);
       return null;
     }
   }
@@ -292,9 +266,9 @@ export class ElevenLabsClient {
       await this.connectionPromise;
 
       const request: CallToolRequest = {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "get_audio_file",
+          name: 'get_audio_file',
           arguments: {
             job_id: jobId,
           },
@@ -305,7 +279,7 @@ export class ElevenLabsClient {
 
       // Check for error message
       for (const content of response.content) {
-        if (content.type === "text") {
+        if (content.type === 'text') {
           return {
             success: false,
             error: content.text,
@@ -315,14 +289,14 @@ export class ElevenLabsClient {
 
       // Look for audio file content
       for (const content of response.content) {
-        if (content.type === "resource") {
+        if (content.type === 'resource') {
           const resource = content.resource as BlobResourceContents;
           return {
             success: true,
             audioData: {
               data: resource.blob,
               name: resource.name as string,
-              mimeType: resource.mimeType || "audio/mpeg",
+              mimeType: resource.mimeType || 'audio/mpeg',
             },
           };
         }
@@ -330,10 +304,10 @@ export class ElevenLabsClient {
 
       return {
         success: false,
-        error: "No audio content found in response",
+        error: 'No audio content found in response',
       };
     } catch (error) {
-      console.error("Error getting audio file:", error);
+      console.error('Error getting audio file:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : String(error),
@@ -346,9 +320,9 @@ export class ElevenLabsClient {
       await this.connectionPromise;
 
       const request: CallToolRequest = {
-        method: "tools/call",
+        method: 'tools/call',
         params: {
-          name: "delete_job",
+          name: 'delete_job',
           arguments: {
             job_id: jobId,
           },
@@ -359,13 +333,13 @@ export class ElevenLabsClient {
 
       // Check if deletion was successful based on response message
       for (const content of response.content) {
-        if (content.type === "text") {
-          return content.text.includes("Successfully deleted");
+        if (content.type === 'text') {
+          return content.text.includes('Successfully deleted');
         }
       }
       return false;
     } catch (error) {
-      console.error("Error deleting job:", error);
+      console.error('Error deleting job:', error);
       return false;
     }
   }
@@ -375,29 +349,29 @@ export class ElevenLabsClient {
       await this.connectionPromise;
 
       const request: ReadResourceRequest = {
-        method: "resources/read",
+        method: 'resources/read',
         params: {
-          uri: "voiceover://voices",
+          uri: 'voiceover://voices',
         },
       };
 
       const response = await this.client.request(request, ReadResourceResultSchema);
-      
+
       for (const content of response.contents) {
-        if (content.mimeType === "text/plain" && typeof content.text === "string") {
+        if (content.mimeType === 'text/plain' && typeof content.text === 'string') {
           try {
             const voices = JSON.parse(content.text);
             if (Array.isArray(voices)) {
               return voices as Voice[];
             }
           } catch (error) {
-            console.error("Error parsing voices response:", error);
+            console.error('Error parsing voices response:', error);
           }
         }
       }
       return [];
     } catch (error) {
-      console.error("Error fetching voices:", error);
+      console.error('Error fetching voices:', error);
       return [];
     }
   }
@@ -410,7 +384,7 @@ export class ElevenLabsClient {
         await this.client.close();
       }
     } catch (error) {
-      console.error("Error closing client:", error);
+      console.error('Error closing client:', error);
     }
   }
 }
